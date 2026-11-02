@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Finish Line — training plan and race predictions</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#13203A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F4F8; --surface:#FFFFFF; --ink:#13203A; --muted:#58647C; --line:#D8DEE8;
+  --track:#2456A6; --track-soft:#E3EBF8; --on-track:#FFFFFF;
+  --clock:#F2B705; --hero:#13203A; --hero-ink:#E9EEF6; --hero-muted:#9DAAC2;
+  --good:#1C8456; --warn:#A8510A; --faint:#8C96A8;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1524; --surface:#132036; --ink:#E7ECF4; --muted:#9BA8BF; --line:#26354F;
+    --track:#6B98F0; --track-soft:#1B2D4D; --on-track:#0C1524;
+    --clock:#F6C631; --hero:#070E1A; --hero-ink:#E7ECF4; --hero-muted:#8D9AB2;
+    --good:#4CC38A; --warn:#F0A257; --faint:#66738C;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1524; --surface:#132036; --ink:#E7ECF4; --muted:#9BA8BF; --line:#26354F;
+  --track:#6B98F0; --track-soft:#1B2D4D; --on-track:#0C1524;
+  --clock:#F6C631; --hero:#070E1A; --hero-ink:#E7ECF4; --hero-muted:#8D9AB2;
+  --good:#4CC38A; --warn:#F0A257; --faint:#66738C;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.num,.clock,h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",system-ui,sans-serif}
+.num{font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--clock);outline-offset:2px;border-radius:4px}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-inner{max-width:1040px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.45rem;letter-spacing:.01em}
+.brand svg{flex:none}
+nav.tabs{display:flex;gap:4px;margin-left:auto;overflow-x:auto}
+nav.tabs a{padding:8px 14px;border-radius:999px;text-decoration:none;color:var(--muted);font-weight:500;white-space:nowrap}
+nav.tabs a[aria-current="page"]{background:var(--track);color:var(--on-track)}
+nav.tabs a:hover:not([aria-current="page"]){background:var(--track-soft);color:var(--ink)}
+.sync{font-size:.8rem;color:var(--faint);width:100%;text-align:right;margin-top:-6px}
+@media (min-width:760px){.sync{width:auto;margin:0}}
+
+main{max-width:1040px;margin:0 auto;padding:24px 20px 64px}
+section.view{display:none}
+section.view.active{display:block}
+h2{font-size:1.55rem;font-weight:600;margin:0 0 4px;line-height:1.2}
+h3{font-size:1.2rem;font-weight:600;margin:0 0 8px}
+p{margin:0 0 12px}
+.lede{color:var(--muted);margin-bottom:20px;max-width:62ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+.stack>*+*{margin-top:20px}
+.grid2{display:grid;gap:20px;grid-template-columns:1fr}
+@media (min-width:820px){.grid2{grid-template-columns:1fr 1fr}}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+
+/* finish clock hero */
+.clockboard{background:var(--hero);color:var(--hero-ink);border-radius:18px;padding:22px 22px 18px;position:relative;overflow:hidden}
+.clockboard::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(25% - 1px),rgba(255,255,255,.06) calc(25% - 1px) 25%);pointer-events:none}
+.clockboard>*{position:relative}
+.clock-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.clock-head p{margin:0;color:var(--hero-muted)}
+.clocks{display:grid;grid-template-columns:1fr;gap:6px}
+@media (min-width:700px){.clocks{grid-template-columns:1fr 1fr;gap:24px}}
+.clock-cell{padding:8px 0 4px;border-top:1px solid rgba(255,255,255,.12)}
+.clock-cell .label{display:flex;align-items:center;gap:8px;color:var(--hero-muted);font-weight:500}
+.goalflag{font-size:.75rem;background:var(--clock);color:#13203A;padding:1px 8px;border-radius:999px;font-weight:600}
+.clock{font-size:clamp(3.2rem,11vw,5.6rem);font-weight:600;line-height:1;color:var(--clock);font-variant-numeric:tabular-nums;letter-spacing:.01em;margin:4px 0}
+.clock.dim{color:var(--hero-muted)}
+.clock-sub{color:var(--hero-muted);font-size:.95rem}
+.clock-sub b{color:var(--hero-ink);font-weight:600}
+.range{position:relative;height:4px;margin:14px 0 10px;border-radius:999px;background:linear-gradient(90deg,var(--clock),rgba(255,255,255,.18))}
+.range-dot{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--clock);box-shadow:0 0 0 3px var(--hero)}
+.scen{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.scen div{display:flex;flex-direction:column;line-height:1.25}
+.scen div:last-child{text-align:right}
+.scen span{color:var(--hero-muted);font-size:.85rem}
+.scen b{font-family:"Barlow Condensed",sans-serif;font-size:1.6rem;font-weight:600;color:var(--hero-ink)}
+.conf{display:inline-flex;gap:6px;align-items:center}
+.conf i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--hero-muted)}
+.conf i.on{background:var(--clock)}
+.hero-empty{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:9px 16px;border-radius:10px;cursor:pointer;font-weight:500;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--track)}
+.btn.primary{background:var(--track);border-color:var(--track);color:var(--on-track)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.onhero{background:transparent;color:var(--hero-ink);border-color:rgba(255,255,255,.3)}
+.btn.onhero.primary{background:var(--clock);color:#13203A;border-color:var(--clock)}
+.btn.danger{color:var(--warn)}
+.iconbtn{border:none;background:none;cursor:pointer;color:var(--faint);padding:6px;border-radius:6px}
+.iconbtn:hover{color:var(--warn);background:var(--track-soft)}
+
+/* week strip */
+.week-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.progress{height:8px;background:var(--track-soft);border-radius:999px;overflow:hidden;margin:10px 0 16px}
+.progress span{display:block;height:100%;background:var(--track);border-radius:999px;transition:width .4s}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.day{border:1px solid var(--line);border-radius:10px;padding:8px 6px;min-height:96px;display:flex;flex-direction:column;gap:2px;font-size:.82rem}
+.day .dow{color:var(--muted);font-weight:500}
+.day .dkm{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.day .dtype{color:var(--muted);line-height:1.2}
+.day.today{border-color:var(--track);box-shadow:inset 0 0 0 1px var(--track)}
+.day.done{background:var(--track-soft)}
+.day.done .dkm{color:var(--track)}
+.day.missed .dkm,.day.missed .dtype{color:var(--faint);text-decoration:line-through}
+.day.rest .dkm{color:var(--faint)}
+.tick{color:var(--good);font-weight:600}
+.shoes{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:12px}
+.shoe{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.shoe.soon{border-color:var(--clock)}
+.shoe.due{border-color:var(--warn)}
+.shoe-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.shoe-flag{font-size:.75rem;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--clock);color:#13203A}
+.shoe.due .shoe-flag{background:var(--warn);color:#fff}
+.shoe-name{font-size:1.02rem;margin-top:4px}
+.shoe-km{font-size:1.7rem;font-weight:600;line-height:1.1}
+.shoe-bar{margin:6px 0 8px}
+.shoe.soon .shoe-bar span{background:var(--clock)}
+.shoe.due .shoe-bar span{background:var(--warn)}
+.picks{margin-top:8px;font-size:.88rem}
+.picks summary{cursor:pointer;color:var(--track);font-weight:500}
+.picks ul{margin:0;padding-left:18px}
+.shoetable input,.shoetable select{min-width:0}
+.shoetable td{vertical-align:middle}
+.linkbtn{background:none;border:none;padding:0;font:inherit;color:var(--clock);text-decoration:underline;cursor:pointer}
+.status-label{font-family:"Barlow Condensed",sans-serif;font-size:2.6rem;font-weight:600;line-height:1}
+.status-score .num{font-family:"Barlow Condensed",sans-serif;font-size:2rem;font-weight:600}
+.next-title{font-family:"Barlow Condensed",sans-serif;font-size:1.9rem;font-weight:600;line-height:1.1;margin-top:4px}
+.next-title .num{color:var(--track)}
+.next .tgt{font-size:.92rem}
+.status-head{display:flex;gap:16px;align-items:center}
+.ring{width:96px;height:96px;flex:none}
+.ring-val{animation:ringfill 1s ease-out}
+@keyframes ringfill{from{stroke-dasharray:0 var(--ring)}}
+.ring-num{font-family:"Barlow Condensed",sans-serif;font-size:24px;font-weight:600;fill:var(--ink)}
+.sdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:16px 0 6px}
+.sday{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:.78rem;color:var(--muted);transition:transform .15s,border-color .15s}
+.sday b{font-size:1.05rem;color:var(--ink)}
+.sday:hover{transform:translateY(-2px);border-color:var(--track)}
+.sday.done{background:var(--track);border-color:var(--track);color:var(--on-track)}
+.sday.done b{color:var(--on-track)}
+.sday.extra{border-color:var(--track);border-style:dashed}
+.sday.short{border-color:var(--clock);background:var(--track-soft)}
+.sday.missed{border-color:var(--warn)}
+.sday.missed b{color:var(--warn)}
+.sday.is-today{box-shadow:0 0 0 2px var(--clock)}
+.sday.sel{outline:2px solid var(--ink);outline-offset:1px}
+.sday-detail{min-height:2.6em;margin:4px 0 10px}
+.xrow{border-top:1px solid var(--line)}
+.xrow summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:12px;padding:10px 0}
+.xrow summary::-webkit-details-marker{display:none}
+.xrow summary:hover .num{color:var(--track)}
+.xval{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:90px}
+.ptbar{width:80px;height:5px;border-radius:999px;background:var(--track-soft);overflow:hidden}
+.ptbar span{display:block;height:100%;background:var(--track);border-radius:999px;transition:width .6s}
+.xbody{padding:0 0 12px;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(-4px)}}
+svg.mini{width:100%;max-width:340px;height:auto;display:block}
+svg.mini text{fill:var(--muted);font-size:10px;font-family:"Barlow",sans-serif}
+@media (prefers-reduced-motion:reduce){.ring-val,.xbody{animation:none}}
+.quicklog{margin-top:16px;padding:14px;border-radius:12px;background:var(--track-soft)}
+.ql-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.ql-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ql-grid input{background:var(--surface)}
+@media (max-width:480px){.ql-grid{grid-template-columns:1fr 1fr}}
+.next-after{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.projtable .chance{font-family:"Barlow Condensed",sans-serif;font-size:1.45rem;font-weight:600}
+.chancebar{height:5px;background:var(--track-soft);border-radius:999px;overflow:hidden;margin:3px 0 2px auto;max-width:110px}
+.chancebar span{display:block;height:100%;border-radius:999px}
+.projtable .proj{font-family:"Barlow Condensed",sans-serif;font-size:1.45rem;font-weight:600;color:var(--track)}
+.projtable td{vertical-align:middle}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column}
+.rc-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.rc-when{font-size:1.2rem;font-weight:600;color:var(--track);white-space:nowrap}
+.rc-why{margin:10px 0 8px}
+.rc-dists{display:flex;gap:6px;flex-wrap:wrap}
+.typechip.on{background:var(--track);color:var(--on-track)}
+.rcard .btn{margin-top:auto;align-self:flex-start}
+.sugg-head{font-weight:500;font-size:.92rem;margin:0 0 6px}
+.sugg-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.sugg{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.sugg span{font-size:.82rem;color:var(--muted)}
+.sugg:hover{border-color:var(--track)}
+.sugg[aria-pressed="true"]{border-color:var(--track);background:var(--track-soft)}
+.tgt{font-size:.85rem;margin-top:4px;color:var(--muted)}
+.tgt b{color:var(--ink);font-weight:600}
+.heat{color:var(--warn);font-weight:500}
+.dwx{font-size:.75rem;color:var(--muted)}
+.dswim{font-size:.78rem;color:var(--track);font-weight:500}
+@media (max-width:560px){
+  .days{grid-template-columns:1fr}
+  .day{min-height:0;flex-direction:row;align-items:baseline;gap:10px;padding:8px 12px}
+  .day .dow{width:36px}
+  .day .dkm{width:64px}
+}
+.today-card{margin-top:16px;padding:14px 16px;border-radius:10px;background:var(--track-soft)}
+.today-card p{margin:0}
+
+/* tables */
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:.88rem}
+td.r,th.r{text-align:right}
+.scroll{overflow-x:auto}
+.paces td:first-child{font-weight:600}
+.paces td.num{font-size:1.15rem}
+
+/* why list */
+.factors{list-style:none;padding:0;margin:0}
+.factors li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.factors li:last-child{border-bottom:none}
+.pen{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.pen.zero{color:var(--good)}
+.pen.plus{color:var(--warn)}
+
+/* charts */
+svg.chart{width:100%;height:auto;display:block}
+svg.chart text{fill:var(--muted);font-family:"Barlow",sans-serif;font-size:12px}
+.legend{display:flex;gap:16px;font-size:.85rem;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;background:var(--track);display:inline-block}
+.sw.plan{background:none;border:1.5px dashed var(--track)}
+
+/* forms */
+.form{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+.form .full{grid-column:1/-1}
+@media (max-width:560px){.form{grid-template-columns:1fr}}
+label.f{display:flex;flex-direction:column;gap:5px;font-weight:500;font-size:.92rem}
+label.f small{font-weight:400;color:var(--muted)}
+input[type=text],input[type=date],input[type=number],select,textarea{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 11px;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--track);outline:none;box-shadow:0 0 0 3px var(--track-soft)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:none;background:none;padding:9px 16px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--track);color:var(--on-track)}
+.err{color:var(--warn);font-size:.9rem;min-height:1.3em;margin:0}
+.ok{color:var(--good)}
+.swimchip{background:transparent;border:1px solid var(--track);color:var(--track)}
+.typechip{font-size:.78rem;padding:2px 9px;border-radius:999px;background:var(--track-soft);color:var(--ink);white-space:nowrap}
+
+/* plan */
+.plan-summary{display:flex;gap:28px;flex-wrap:wrap;margin-bottom:6px}
+.plan-summary div{display:flex;flex-direction:column}
+.plan-summary .num{font-size:1.7rem;font-weight:600;line-height:1.1}
+details.wk{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:8px}
+details.wk[open]{border-color:var(--track)}
+details.wk summary{list-style:none;cursor:pointer;padding:12px 16px;display:grid;grid-template-columns:110px 1fr auto auto;gap:14px;align-items:center}
+details.wk summary::-webkit-details-marker{display:none}
+details.wk summary .num{font-size:1.2rem;font-weight:600}
+.phase{font-size:.8rem;padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);justify-self:start}
+.phase.Base{border-color:var(--line)}
+.phase.Build{border-color:var(--track);color:var(--track)}
+.phase.Peak{background:var(--track);border-color:var(--track);color:var(--on-track)}
+.phase.Taper{border-style:dashed}
+.phase.Race{background:var(--clock);border-color:var(--clock);color:#13203A}
+.wk-days{padding:0 16px 12px}
+.wk-days .row{display:grid;grid-template-columns:48px 70px 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:.93rem}
+.wk-days .row .num{font-size:1.05rem;font-weight:600}
+@media (max-width:560px){
+  details.wk summary{grid-template-columns:1fr auto;row-gap:4px}
+  details.wk summary .lr{display:none}
+}
+.note{font-size:.88rem;color:var(--muted);margin-top:14px;max-width:70ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="6" fill="var(--track)"/><path d="M7 19V7h5M7 13h4M15 7v12M19 7v12" stroke="var(--on-track)" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+      Finish Line
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#overview" data-view="overview">Overview</a>
+      <a href="#log" data-view="log">Log activity</a>
+      <a href="#plan" data-view="plan">Plan</a>
+      <a href="#settings" data-view="settings">Settings</a>
+    </nav>
+    <div class="sync" id="sync" aria-live="polite">Saved on this device</div>
+  </div>
+</header>
+
+<main>
+  <section class="view" id="view-overview"></section>
+  <section class="view" id="view-log"></section>
+  <section class="view" id="view-plan"></section>
+  <section class="view" id="view-settings"></section>
+</main>
+
+<script>
+(function(){
+"use strict";
+const DAY = 864e5, MI = 1.609344, LS_KEY = "finishline:v1";
+const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const TYPES = {easy:"Easy", long:"Long run", tempo:"Tempo", intervals:"Intervals", race:"Race or time trial"};
+const SWIM_TYPES = {pool:"Pool", open:"Open water"};
+const YD = 0.0009144; // km per yard
+const DIST = {"5k":{label:"5K", km:5}, "10k":{label:"10K", km:10}, half:{label:"Half marathon", km:21.0975}, full:{label:"Marathon", km:42.195}};
+const SHOE_ROLES = {
+  speed:{label:"Speed sessions", life:550, picks:["Saucony Endorphin Speed","Puma Deviate Nitro","Nike Zoom Fly","the latest Asics Magic Speed"], why:"plated trainers for tempo and intervals"},
+  easy:{label:"Easy & recovery", life:750, picks:["Asics Gel-Nimbus (newer version)","Asics Novablast","New Balance Fresh Foam 1080","Brooks Glycerin"], why:"soft, durable daily trainers"},
+  long:{label:"Long runs", life:700, picks:["Asics Megablast","Puma MagMax Nitro","New Balance SC Trainer","the latest Asics Superblast"], why:"cushioned, light max-stack trainers"},
+  race:{label:"Race day", life:350, picks:["Asics Metaspeed Sky or Edge","Adidas Adizero Adios Pro","Puma Fast-R Nitro Elite","Nike Alphafly (newer version)"], why:"carbon-plated super shoes"}
+};
+function defaultShoes(){
+  const t = iso(today0());
+  return [["Asics Magic Speed","speed"],["Asics Gel-Nimbus 26","easy"],["Asics Superblast 3","long"],["Nike Alphafly 3","race"]]
+    .map(([name, role]) => ({id:uid(), name, role, startKm:0, retireKm:SHOE_ROLES[role].life, since:t, retired:false}));
+}
+const ROLE_OF_TYPE = {intervals:"speed", tempo:"speed", easy:"easy", long:"long", race:"race"};
+const MONTHS_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+// Well-known recurring races in India and the months they are usually held. Dates move each year: always confirm on the official site.
+const monthGap = (a,b) => { const d = Math.abs(a-b); return Math.min(d, 12-d); };
+const monthsTxt = ms => ms.map(m => MONTHS_FULL[m-1].slice(0,3)).join("–");
+
+/* ---------- state ---------- */
+function defaultState(){ return {shoes:defaultShoes(), profile:{race:"full", raceDate:"", goal:"", units:"km", races:[], age:null, maxHr:null, restHr:null, location:"Vadodara, Gujarat", runTime:"morning"}, runs:[], schedule:null}; }
+function normalize(s){
+  const d = defaultState();
+  if(!s || typeof s !== "object") return d;
+  const p = Object.assign({}, d.profile, s.profile || {});
+  if(p.race !== "half") p.race = "full";
+  if(p.units !== "mi") p.units = "km";
+  const okDate = x => typeof x === "string" && /^\d{4}-\d{2}-\d{2}$/.test(x);
+  const intIn = (x,a,b) => (x !== null && x !== "" && isFinite(x) && +x >= a && +x <= b) ? Math.round(+x) : null;
+  p.age = intIn(p.age, 10, 100); p.maxHr = intIn(p.maxHr, 120, 230); p.restHr = intIn(p.restHr, 30, 100); p.runDays = intIn(p.runDays, 3, 7);
+  p.predRef = typeof p.predRef === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.predRef) ? p.predRef : "";
+  p.location = typeof p.location === "string" && p.location.trim() ? p.location.slice(0,80) : "Vadodara, Gujarat";
+  if(p.runTime !== "evening") p.runTime = "morning";
+  p.races = Array.isArray(p.races) ? p.races.filter(r => r && okDate(r.date) && DIST[r.dist]).map(r => ({
+    id:String(r.id || uid()), name: typeof r.name === "string" ? r.name.slice(0,60) : "", dist:r.dist, date:r.date,
+    goal: typeof r.goal === "string" ? r.goal.slice(0,10) : "", main: !!r.main && (r.dist === "half" || r.dist === "full")})) : [];
+  if(!p.races.length && okDate(p.raceDate)) p.races = [{id:uid(), name:"", dist:p.race, date:p.raceDate, goal:p.goal || "", main:true}];
+  const runs = Array.isArray(s.runs) ? s.runs.filter(r => r && typeof r.date === "string" && isFinite(r.km) && r.km > 0 && (r.min === null || (isFinite(r.min) && r.min > 0)) && (r.min !== null || r.sport !== "swim"))
+    .map(r => ({id:String(r.id || uid()), date:r.date, km:+r.km, min: r.min === null ? null : +r.min, sport: r.sport === "swim" ? "swim" : "run", type: r.sport === "swim" ? (SWIM_TYPES[r.type] ? r.type : "pool") : (TYPES[r.type] ? r.type : "easy"), notes: typeof r.notes === "string" ? r.notes.slice(0,200) : "", hr: (r.hr !== null && isFinite(r.hr) && r.hr >= 40 && r.hr <= 230) ? Math.round(+r.hr) : null, shoe: typeof r.shoe === "string" ? r.shoe.slice(0,40) : "", src: typeof r.src === "string" ? r.src.slice(0,60) : ""})) : [];
+  const sc = s.schedule && typeof s.schedule === "object" && /^\d{4}-\d{2}-\d{2}$/.test(s.schedule.anchor) && /^\d{4}-\d{2}-\d{2}$/.test(s.schedule.gen)
+    ? {anchor:s.schedule.anchor, gen:s.schedule.gen, key:String(s.schedule.key || "")} : null;
+  const today = iso(today0());
+  const shoes = Array.isArray(s.shoes) ? s.shoes.filter(x => x && typeof x.name === "string" && SHOE_ROLES[x.role]).map(x => ({
+    id:String(x.id || uid()), name:x.name.slice(0,60), role:x.role, startKm: isFinite(x.startKm) && x.startKm >= 0 ? +x.startKm : 0,
+    retireKm: isFinite(x.retireKm) && x.retireKm >= 50 ? +x.retireKm : SHOE_ROLES[x.role].life, since: /^\d{4}-\d{2}-\d{2}$/.test(x.since) ? x.since : today, retired: !!x.retired})) : defaultShoes();
+  return {profile:p, runs, schedule:sc, shoes};
+}
+function loadLocal(){ try{ const raw = localStorage.getItem(LS_KEY); return raw ? normalize(JSON.parse(raw)) : null; }catch(e){ return null; } }
+let state = loadLocal() || defaultState();
+let dbDoc = null, saveTimer = null;
+function setSync(t){ document.getElementById("sync").textContent = t; }
+function persist(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+  }, 350);
+}
+function upcomingRaces(){ const t = iso(today0()); return state.profile.races.filter(r => r.date >= t).sort((a,b) => a.date.localeCompare(b.date)); }
+function targetRace(){
+  const up = upcomingRaces().filter(r => r.dist === "half" || r.dist === "full");
+  return up.find(r => r.main) || up[0] || null;
+}
+// The plan and predictions follow the target race: the main race, or the next half or full marathon.
+function syncTarget(){
+  const tr = targetRace();
+  if(tr){ state.profile.race = tr.dist; state.profile.raceDate = tr.date; state.profile.goal = tr.goal; }
+  else { state.profile.raceDate = ""; state.profile.goal = ""; }
+}
+function raceLabel(r){ return r.name || DIST[r.dist].label; }
+function runsOnly(){ return state.runs.filter(r => r.sport !== "swim"); }
+function swimsOnly(){ return state.runs.filter(r => r.sport === "swim"); }
+function swimDist(km){ return unit()==="mi" ? Math.round(km/YD).toLocaleString("en-US") + " yd" : Math.round(km*1000).toLocaleString("en-US") + " m"; }
+function swimPace(km, min){ const per = unit()==="mi" ? min/(km/YD)*100 : min/(km*10); let sec = Math.round(per*60); const m = Math.floor(sec/60); sec -= m*60; return `${m}:${String(sec).padStart(2,"0")}/100 ${unit()==="mi"?"yd":"m"}`; }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ---------- dates & formatting ---------- */
+function parseD(s){ const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); }
+function iso(d){ return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function today0(){ const t = new Date(); t.setHours(0,0,0,0); return t; }
+function addDays(d,n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function mondayOf(d){ const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; }
+function dowIdx(d){ return (d.getDay()+6)%7; }
+function shortDate(d){ return MONTHS[d.getMonth()] + " " + d.getDate(); }
+function fmtHMS(min){
+  if(!isFinite(min)) return "–:––:––";
+  let s = Math.round(min*60); const h = Math.floor(s/3600); s -= h*3600; const m = Math.floor(s/60); s -= m*60;
+  return h ? `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}` : `${m}:${String(s).padStart(2,"0")}`;
+}
+function fmtPace(minPerKm){
+  if(!isFinite(minPerKm)) return "–";
+  const v = state.profile.units === "mi" ? minPerKm*MI : minPerKm;
+  let s = Math.round(v*60); const m = Math.floor(s/60); s -= m*60;
+  return `${m}:${String(s).padStart(2,"0")}`;
+}
+function unit(){ return state.profile.units; }
+function dist(km, dp){ const v = unit()==="mi" ? km/MI : km; return v.toFixed(dp === undefined ? 1 : dp); }
+function distRound(km){ const v = unit()==="mi" ? km/MI : km; const r = Math.round(v*2)/2; return (r % 1 ? r.toFixed(1) : String(r)); }
+function paceUnit(){ return unit()==="mi" ? "/mi" : "/km"; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function parseDuration(str){
+  const s = String(str).trim(); if(!s) return NaN;
+  if(/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+  const parts = s.split(":").map(x => x.trim());
+  if(parts.some(p => !/^\d+$/.test(p))) return NaN;
+  const n = parts.map(Number);
+  if(n.length === 2) return n[0] + n[1]/60;
+  if(n.length === 3) return n[0]*60 + n[1] + n[2]/60;
+  return NaN;
+}
+
+/* ---------- running science (Daniels/Gilbert) ---------- */
+const vo2 = v => -4.60 + 0.182258*v + 0.000104*v*v;                 // v in m/min
+const pctT = t => 0.8 + 0.1894393*Math.exp(-0.012778*t) + 0.2989558*Math.exp(-0.1932605*t);
+const vFor = x => { const a=0.000104, b=0.182258, c=-4.60-x; return (-b + Math.sqrt(b*b - 4*a*c))/(2*a); };
+const paceAt = (vdot, frac) => 1000 / vFor(vdot*frac);              // min per km
+function raceTime(vdot, km){
+  let lo = km*2, hi = km*15;
+  for(let i=0;i<60;i++){ const mid=(lo+hi)/2; const vd = vo2(km*1000/mid)/pctT(mid); if(vd > vdot) lo = mid; else hi = mid; }
+  return (lo+hi)/2;
+}
+// effort fraction of VO2max typically held for each training run type
+const EFFORT = {easy:{f:.64,w:.7}, long:{f:.66,w:1}, tempo:{f:.83,w:2}};
+function runEstimate(r){
+  if(r.km < 1.5 || r.min < 6) return null;
+  const v = r.km*1000/r.min;
+  if(r.type === "race") return {v: vo2(v)/pctT(r.min), w:4};
+  const e = EFFORT[r.type]; if(!e) return null;
+  return {v: vo2(v)/e.f, w:e.w};
+}
+function estimateFitness(runs, ref){
+  const refT = ref.getTime(), c = [];
+  for(const r of runs){
+    const age = (refT - parseD(r.date).getTime())/DAY;
+    if(age < 0 || age > 42) continue;
+    const e = runEstimate(r); if(!e || !isFinite(e.v)) continue;
+    c.push({v:e.v, w:e.w*Math.exp(-age/21), type:r.type});
+  }
+  if(!c.length) return null;
+  const races = c.filter(x => x.type === "race");
+  let train = c.filter(x => x.type !== "race");
+  if(train.length >= 5){ train.sort((a,b) => a.v-b.v); train = train.slice(Math.floor(train.length*.2)); }
+  const wm = a => a.reduce((s,x)=>s+x.v*x.w,0) / a.reduce((s,x)=>s+x.w,0);
+  let vdot = races.length ? (train.length ? wm(races)*.8 + wm(train)*.2 : wm(races)) : wm(train);
+  vdot = Math.max(20, Math.min(85, vdot));
+  const tempos = c.filter(x => x.type === "tempo").length;
+  const conf = races.length && c.length >= 4 ? 3 : (races.length || tempos >= 2) ? 2 : 1;
+  return {vdot, n:c.length, conf, races:races.length};
+}
+function volumeStats(runs, ref){
+  const refT = ref.getTime(); let k28 = 0, long42 = 0, long28 = 0, oldest = 0;
+  for(const r of runs){
+    const age = (refT - parseD(r.date).getTime())/DAY;
+    if(age < 0) continue;
+    if(age < 28){ k28 += r.km; long28 = Math.max(long28, r.km); oldest = Math.max(oldest, age); }
+    if(age < 42) long42 = Math.max(long42, r.km);
+  }
+  // average over the weeks your log actually covers (up to 4), so a short history isn’t diluted
+  return {weekly:k28/clamp((oldest+1)/7, 1, 4), long28, long42};
+}
+const clamp = (x,a,b) => Math.max(a, Math.min(b, x));
+function predict(runs, ref){
+  const fit = estimateFitness(runs, ref);
+  if(!fit) return null;
+  const vol = volumeStats(runs, ref);
+  const hmRaw = raceTime(fit.vdot, 21.0975), fmRaw = raceTime(fit.vdot, 42.195);
+  const hmVol = clamp((35 - vol.weekly)*.002, 0, .05), hmLong = clamp((16 - vol.long42)*.004, 0, .04);
+  const fmVol = clamp((60 - vol.weekly)*.0025, 0, .10), fmLong = clamp((30 - vol.long42)*.004, 0, .08);
+  // scenario spread: wider when the fitness estimate is less certain
+  const spread = [0, 2.8, 1.8, 1.0][fit.conf];
+  const hmPen = hmVol + hmLong, fmPen = fmVol + fmLong;
+  const hm = hmRaw*(1+hmPen), fm = fmRaw*(1+fmPen);
+  return {fit, vol, hmRaw, fmRaw, hm, fm,
+    scen:{
+      hm:{amb: raceTime(fit.vdot+spread, 21.0975)*(1+hmPen*.5), abs: hm, worst: raceTime(fit.vdot-spread, 21.0975)*(1+hmPen*1.5+.01)},
+      fm:{amb: raceTime(fit.vdot+spread, 42.195)*(1+fmPen*.5), abs: fm, worst: raceTime(fit.vdot-spread, 42.195)*(1+fmPen*1.5+.03)}
+    },
+    pen:{hmVol, hmLong, fmVol, fmLong}};
+}
+function trainingPaces(vdot, pred){
+  return {
+    easy:[paceAt(vdot,.68), paceAt(vdot,.60)],
+    mp: pred ? pred.fmRaw/42.195 : paceAt(vdot,.79),
+    hmp: pred ? pred.hmRaw/21.0975 : paceAt(vdot,.84),
+    t: paceAt(vdot,.83), i: paceAt(vdot,.91), r: paceAt(vdot,1.0), vdot
+  };
+}
+
+/* ---------- shoes ---------- */
+function activeShoes(){ return (state.shoes || []).filter(x => !x.retired); }
+function shoeById(id){ return (state.shoes || []).find(x => x.id === id) || null; }
+function defaultShoeFor(type){ const role = ROLE_OF_TYPE[type] || "easy"; return activeShoes().find(x => x.role === role) || null; }
+function shoeOfRun(r){
+  if(r.sport === "swim") return null;
+  if(r.shoe) return r.shoe === "none" ? null : shoeById(r.shoe);
+  const sh = defaultShoeFor(r.type);
+  return sh;
+}
+function shoeForSession(d){
+  const role = d.type === "race" ? "race" : d.type === "long" ? "long" : ["t","i","mp","hmp"].includes(d.pk) ? "speed" : "easy";
+  return activeShoes().find(x => x.role === role) || null;
+}
+function shoeStats(sh){
+  const t = today0(), runs = runsOnly().filter(r => { const x = shoeOfRun(r); return x && x.id === sh.id; });
+  const logged = runs.reduce((a,r)=>a+r.km,0), km = sh.startKm + logged;
+  const last28 = runs.filter(r => (t - parseD(r.date))/DAY < 28).reduce((a,r)=>a+r.km,0);
+  const first = runs.reduce((m,r) => r.date < m ? r.date : m, iso(t));
+  const span = Math.max(7, Math.min(28, (t - parseD(first))/DAY + 1));
+  let rate = last28 / span * 7;
+  if(rate < 1){ // nothing logged yet: use the current plan
+    const bi = blockInfo();
+    if(!bi.cur.past){ const pk = bi.cur.weeks.flatMap(w => w.days).filter(d => d.km && shoeForSession(d) && shoeForSession(d).id === sh.id).reduce((a,d)=>a+d.km,0); rate = pk / Math.max(1, bi.cur.weeks.length); }
+  }
+  const left = sh.retireKm - km, pct = clamp(km / sh.retireKm, 0, 1.2);
+  const weeks = rate > 0.5 && left > 0 ? left / rate : null;
+  const when = weeks !== null ? addDays(t, Math.round(weeks*7)) : null;
+  return {km, logged, runs:runs.length, rate, left, pct, when};
+}
+function shoesHtml(){
+  const shoes = activeShoes();
+  if(!shoes.length) return `<div class="panel"><h3>Your shoes</h3><p class="muted" style="margin:0">No shoes added. Add them in <a href="#settings">Settings</a> to track distance on each pair.</p></div>`;
+  const cards = shoes.map(sh => {
+    const st = shoeStats(sh), R = SHOE_ROLES[sh.role];
+    const status = st.left <= 0 ? {cls:"due", txt:"Past its usual life. Time for a new pair."}
+      : st.pct >= .8 ? {cls:"soon", txt:`About ${distRound(st.left)} ${unit()} left. Buy the next pair now and rotate them in.`}
+      : {cls:"", txt: st.when ? `About ${distRound(st.left)} ${unit()} left · replace around ${MONTHS[st.when.getMonth()]} ${st.when.getFullYear()}` : `About ${distRound(st.left)} ${unit()} left`};
+    const showPicks = st.pct >= .7;
+    return `<div class="shoe ${status.cls}">
+      <div class="shoe-top"><span class="typechip">${R.label}</span>${status.cls ? `<span class="shoe-flag">${status.cls === "due" ? "Replace" : "Replace soon"}</span>` : ""}</div>
+      <b class="shoe-name">${esc(sh.name)}</b>
+      <div><span class="num shoe-km">${dist(st.km,0)}</span> <span class="muted">/ ${distRound(sh.retireKm)} ${unit()}</span></div>
+      <div class="progress shoe-bar" aria-hidden="true"><span style="width:${Math.min(100, st.pct*100)}%"></span></div>
+      <p class="small" style="margin:0 0 6px">${status.txt}</p>
+      <p class="muted small" style="margin:0">${st.runs} run${st.runs===1?"":"s"} logged${st.rate >= 1 ? ` · about ${distRound(st.rate)} ${unit()} a week` : ""}${sh.startKm ? ` · plus ${distRound(sh.startKm)} ${unit()} from before your log` : ""}</p>
+    </div>`;
+  }).join("");
+  const anyZero = shoes.some(sh => !sh.startKm) ;
+  return `<div class="panel"><div class="week-head"><h3>Your shoes</h3><a class="small" href="#settings">Edit shoes</a></div>
+    <div class="shoes">${cards}</div>
+    <p class="note">Usual life: about ${distRound(550)} ${unit()} for speed trainers, ${distRound(700)}–${distRound(750)} for daily and long-run trainers, ${distRound(350)} for race shoes, whose foam goes flat sooner. Replace earlier if the midsole feels dead, the outsole is worn through, or new aches show up.${anyZero ? " Every logged run is counted automatically by its type, including runs from before you added the shoes. If a pair has distance from before you started logging here, add it in Settings." : ""}</p></div>`;
+}
+
+/* ---------- heart rate & weather ---------- */
+// zones as [fraction of max HR] and [fraction of heart-rate reserve, used when resting HR is known]
+const HRZ = {recovery:[[.60,.70],[.50,.62]], easy:[[.65,.78],[.59,.74]], steady:[[.75,.85],[.68,.80]], mp:[[.80,.87],[.75,.84]], hmp:[[.85,.90],[.80,.87]],
+  t:[[.88,.92],[.84,.89]], i:[[.95,1],[.93,1]], "5k":[[.95,.98],[.93,.97]], "10k":[[.92,.96],[.89,.94]], half:[[.85,.90],[.80,.87]], full:[[.80,.87],[.75,.84]]};
+function hrMax(){ const p = state.profile; if(p.maxHr) return {v:p.maxHr, est:false}; if(p.age) return {v:Math.round(208 - .7*p.age), est:true}; return null; }
+function hrRange(key){
+  const m = hrMax(); if(!m || !HRZ[key]) return null;
+  const rest = state.profile.restHr && state.profile.restHr < m.v - 40 ? state.profile.restHr : null;
+  const z = HRZ[key][rest ? 1 : 0], f = x => rest ? Math.round(rest + x*(m.v - rest)) : Math.round(x*m.v);
+  return [f(z[0]), Math.min(m.v, f(z[1]))];
+}
+const WX_KEY = "finishline:weather";
+let weather = null, wxError = false;
+try{ weather = JSON.parse(localStorage.getItem(WX_KEY) || "null"); }catch(e){ weather = null; }
+async function refreshWeather(force){
+  const loc = state.profile.location;
+  if(!force && weather && weather.location === loc && Date.now() - (weather.fetchedAt || 0) < 6*3600e3) return;
+  try{
+    let geo = weather && weather.location === loc && isFinite(weather.lat) ? {latitude:weather.lat, longitude:weather.lon} : null;
+    if(!geo){
+      const parts = loc.split(",").map(x => x.trim()), want = (parts[1] || "").toLowerCase();
+      const g = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(parts[0])}&count=10&language=en&format=json`)).json();
+      const res = g.results || [];
+      geo = res.find(r => want && (`${r.admin1 || ""} ${r.country || ""}`).toLowerCase().includes(want)) || res[0];
+      if(!geo) throw new Error("place not found");
+    }
+    const f = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.latitude}&longitude=${geo.longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=16`)).json();
+    const d = f.daily;
+    weather = {location:loc, lat:geo.latitude, lon:geo.longitude, fetched:iso(today0()), fetchedAt:Date.now(),
+      days: d.time.map((t,i) => ({date:t, highC:d.temperature_2m_max[i], lowC:d.temperature_2m_min[i], rain:(d.precipitation_probability_max || [])[i] || 0}))};
+    wxError = false;
+    try{ localStorage.setItem(WX_KEY, JSON.stringify(weather)); }catch(e){}
+  }catch(e){ wxError = true; }
+  render();
+}
+function wxFor(date){
+  if(!weather || !Array.isArray(weather.days)) return null;
+  const d = weather.days.find(x => x && x.date === iso(date)); if(!d || !isFinite(d.lowC) || !isFinite(d.highC)) return null;
+  const morning = state.profile.runTime !== "evening";
+  return {lowC:d.lowC, highC:d.highC, rain:+d.rain || 0, morning, runT: morning ? d.lowC + 2 : d.highC - 4};
+}
+const heatAdj = runT => clamp((runT - 15)*.004, 0, .10); // ~0.4% slower per °C above 15
+function sessionTarget(d, paces){
+  if(!d.km) return null;
+  const key = d.pk || "easy", wx = wxFor(d.date), fullT = state.profile.race === "full";
+  let pace = null;
+  if(paces){
+    const P = {easy:paces.easy, recovery:[paces.easy[1], paces.easy[1] + .25], steady:[paces.mp, paces.easy[0]], t:[paces.t], i:[paces.i], mp:[paces.mp], hmp:[paces.hmp], race:[fullT ? paces.mp : paces.hmp]};
+    pace = key === "tune" && paces.vdot && d.raceKm ? [raceTime(paces.vdot, d.raceKm)/d.raceKm] : (P[key] || P.easy);
+  }
+  const hr = hrRange(key === "tune" ? d.tuneDist : key === "race" ? (fullT ? "full" : "half") : key);
+  const adj = wx ? heatAdj(wx.runT) : 0;
+  return {pace, adjPace: pace && adj > .004 ? pace.map(x => x*(1 + adj)) : null, adj, hr, wx};
+}
+function paceRangeTxt(a){ return a.length > 1 ? `${fmtPace(Math.min(...a))}–${fmtPace(Math.max(...a))}${paceUnit()}` : `${fmtPace(a[0])}${paceUnit()}`; }
+function targetHtml(d, paces){
+  const s = sessionTarget(d, paces); if(!s) return "";
+  const parts = [];
+  if(s.pace) parts.push(`Pace <b class="num">${paceRangeTxt(s.adjPace || s.pace)}</b>${s.adjPace ? ` <span class="heat">slowed ${Math.round(s.adj*100)}% for heat</span>` : ""}`);
+  if(s.hr) parts.push(`HR <b class="num">${s.hr[0]}–${s.hr[1]}</b> bpm`);
+  if(s.wx) parts.push(`<span class="${s.wx.runT >= 28 ? "heat" : ""}">${Math.round(s.wx.runT)}°C at your ${s.wx.morning ? "morning" : "evening"} run</span>${s.wx.rain >= 10 ? `, ${s.wx.rain}% rain` : ""}`);
+  return parts.length ? `<div class="tgt">${parts.join(" · ")}</div>` : "";
+}
+function forecastNote(){
+  if(!weather || !Array.isArray(weather.days) || !weather.days.length) return `<p class="note">${wxError ? `Couldn’t load the weather for ${esc(state.profile.location)}. Check your connection, or the location in Settings. Paces show without a heat adjustment until it loads.` : "Loading the weather forecast…"}</p>`;
+  const ds = weather.days.map(d => d.date).sort();
+  return `<p class="note">Forecast for ${esc(weather.location)} from Open-Meteo, updated ${fmtDay(parseD(weather.fetched))}, covering ${shortDate(parseD(ds[0]))}–${shortDate(parseD(ds[ds.length-1]))}. Paces on those days are slowed for the temperature at your usual ${state.profile.runTime} run, so your heart rate stays in range. It refreshes on its own every few hours.${wxError ? " The latest refresh failed, so this may be out of date." : ""}</p>`;
+}
+
+/* ---------- plan generator ---------- */
+function raceDateOf(){
+  const p = state.profile;
+  if(p.raceDate) return {date: parseD(p.raceDate), assumed:false};
+  return {date: addDays(state.schedule && state.schedule.anchor ? parseD(state.schedule.anchor) : mondayOf(today0()), 15*7 + 6), assumed:true};
+}
+function lastSunday(d){ return addDays(mondayOf(d), -1); }
+function fmtDay(d){ return DOW[dowIdx(d)] + " " + shortDate(d); }
+// Predictions refresh every Monday from runs up to the Sunday before, or sooner when you tap Update now.
+function predRefDate(){
+  const t = today0(), ls = lastSunday(t), p = state.profile.predRef;
+  if(p){ const d = parseD(p); if(d > ls && d <= t) return d; }
+  return ls;
+}
+function weeklyPred(){ return predict(runsOnly(), predRefDate()); }
+function weekKm(runs, monday){ const e = addDays(monday,7); return runs.filter(r => { const d = parseD(r.date); return d >= monday && d < e; }).reduce((s,r)=>s+r.km,0); }
+function scheduleKey(){ return state.profile.race + "|" + (state.profile.raceDate || ""); }
+function ensureSchedule(){
+  const sc = state.schedule;
+  if(!sc || sc.key !== scheduleKey()){
+    const t = today0();
+    state.schedule = {anchor: iso(mondayOf(t)), gen: iso(t), key: scheduleKey()};
+    persist();
+  }
+}
+// Two-week blocks from the anchor Monday. Each block is planned once, on the Thursday
+// three days before the previous block ends, from runs up to the day before.
+function blockInfo(){
+  ensureSchedule();
+  const t = today0(), anchor = parseD(state.schedule.anchor), mon = mondayOf(t);
+  const k = Math.max(0, Math.floor(Math.round((mon - anchor)/DAY)/14));
+  const startOf = j => addDays(anchor, 14*j);
+  const genOf = j => j === 0 ? parseD(state.schedule.gen) : addDays(startOf(j), -4);
+  // a block you started or rebuilt yourself includes that day’s runs; automatic blocks use runs up to the day before
+  const cur = buildPlan(startOf(k), k === 0 ? genOf(0) : addDays(genOf(k), -1), anchor);
+  cur.genDate = genOf(k);
+  const nextGen = genOf(k+1);
+  let next = null;
+  if(!cur.past && t >= nextGen){
+    next = buildPlan(startOf(k+1), addDays(nextGen, -1), anchor);
+    if(next.past || !next.weeks.length) next = null; else next.genDate = nextGen;
+  }
+  return {cur, next, start:startOf(k), nextGen, weekIdx: clamp(Math.round((mon - startOf(k))/(7*DAY)), 0, 1)};
+}
+function buildPlan(start, cutoff, anchor){
+  const t = today0(), full = state.profile.race === "full";
+  const {date:raceDate, assumed} = raceDateOf();
+  if(raceDate < t) return {past:true, raceDate, weeks:[]};
+  let nWeeks = Math.floor((mondayOf(raceDate) - start)/(7*DAY) + 0.5) + 1;
+  if(nWeeks < 1) return {past:true, raceDate, weeks:[]};
+  nWeeks = clamp(nWeeks, 1, 30);
+  const runs = runsOnly().filter(r => parseD(r.date) <= cutoff);
+  const vol = volumeStats(runs, cutoff);
+  const base = Math.max(15, vol.weekly);
+  const baseLong = Math.max(full ? 10 : 8, vol.long28);
+  const peakWk = full ? clamp(base*1.5, 45, 95) : clamp(base*1.4, 30, 70);
+  const peakLong = full ? 32 : 19;
+  const taperN = full ? 3 : 2;
+  let recentPeak = 0;
+  for(let w=1; w<=6; w++) recentPeak = Math.max(recentPeak, weekKm(runs, addDays(mondayOf(cutoff), -7*w)));
+  const refPeak = Math.max(base, recentPeak), refLong = Math.max(baseLong, vol.long42);
+  // pace source: weekly fitness snapshot, else your most recent runs, else your main race goal time
+  let pred = predict(runs, lastSunday(addDays(cutoff,1))), paceSrc = "fitness";
+  if(!pred){ pred = predict(runsOnly(), today0()); paceSrc = "recent";
+    // one or two easy runs say little about fitness: prefer the goal time until there’s more to go on
+    if(pred && pred.fit.n < 3 && pred.fit.conf < 2 && targetRace() && parseDuration(targetRace().goal) > 10) pred = null; }
+  let paces = pred ? trainingPaces(pred.fit.vdot, pred) : null;
+  if(!paces){
+    const tr = targetRace(), gm = tr ? parseDuration(tr.goal) : NaN;
+    if(tr && gm > 10){
+      const km = DIST[tr.dist].km, gv = clamp(vo2(km*1000/gm)/pctT(gm), 20, 85);
+      paces = trainingPaces(gv, null);
+      if(tr.dist === "full"){ paces.mp = gm/42.195; paces.hmp = raceTime(gv, 21.0975)/21.0975; }
+      else { paces.hmp = gm/21.0975; paces.mp = raceTime(gv, 42.195)/42.195; }
+      paceSrc = "goal";
+    }else paceSrc = "none";
+  }
+  const tFr = full ? [.75,.6,.38] : [.7,.42], tLong = full ? [.68,.5] : [.72];
+  const weeks = [];
+  for(let i=0; i<Math.min(2, nWeeks); i++){
+    const monday = addDays(start, 7*i), r = nWeeks - i, g = Math.round((monday - anchor)/(7*DAY));
+    if(r <= taperN){
+      const k = taperN - r, isRace = r === 1;
+      const lr = isRace ? 0 : refLong * (tLong[k] || .5);
+      weeks.push(makeWeek(monday, refPeak*tFr[tFr.length - taperN + k], lr, isRace ? "Race" : "Taper", g, false, full, paces, isRace ? raceDate : null));
+    }else{
+      let target = Math.min(peakWk, base*Math.pow(1.07, i+1));
+      let lr = Math.min(peakLong, baseLong + 1.6*(i+1), Math.max(target*(full ? .45 : .5), baseLong));
+      const cut = g % 4 === 3 && r > taperN + 1;
+      if(cut){ target *= .8; lr *= .75; }
+      const phase = r <= taperN + (full ? 4 : 3) ? "Peak" : r <= taperN + (full ? 10 : 8) ? "Build" : "Base";
+      weeks.push(makeWeek(monday, target, lr, phase, g, cut, full, paces, null));
+    }
+  }
+  return {weeks, raceDate, assumed, base, baseLong, full, paces, paceSrc, nWeeks, start, cutoff};
+}
+function paceTxt(p, key, fallback){
+  if(!p) return fallback;
+  if(key === "easy") return `${fmtPace(p.easy[0])}–${fmtPace(p.easy[1])}${paceUnit()}`;
+  return fmtPace(p[key]) + paceUnit();
+}
+function makeWeek(monday, target, lr, phase, idx, cut, full, paces, raceDate){
+  const days = Array.from({length:7}, (_,d) => ({dow:d, date:addDays(monday,d), type:"rest", km:0, title:"Rest", detail:"Rest, or an easy swim to loosen up."}));
+  const fixedDays = state.profile.runDays;
+  const runDays = fixedDays || (target < 30 ? 4 : target < 50 ? 5 : 6);
+  const TPL = {3:{q1:1, easy:[3], long:6}, 4:{q1:1, easy:[3,5], long:6}, 5:{q1:1, q2:3, easy:[2,5], long:6}, 6:{q1:1, q2:3, easy:[0,2,5], long:6}, 7:{q1:1, q2:3, easy:[0,2,4,5], long:6}};
+  const tpl = JSON.parse(JSON.stringify(TPL[runDays]));
+  if(!fixedDays && runDays === 4 && (phase === "Build" || phase === "Peak")){ tpl.q2 = 3; tpl.easy = [5]; }
+  const E = paceTxt(paces,"easy","conversational effort"), T = paceTxt(paces,"t","comfortably hard"), I = paceTxt(paces,"i","hard, controlled"),
+        MP = paceTxt(paces,"mp","marathon effort"), HMP = paceTxt(paces,"hmp","half-marathon effort");
+  const q = {};
+  if(phase === "Base"){
+    q.q1 = {type:"strides", title:"Easy + strides", detail:`Easy at ${E}, then 6×20 s relaxed strides with full recovery.`};
+    q.q2 = {type:"steady", title:"Steady run", detail:`Start easy, finish the last third at ${full ? MP : HMP}.`};
+  }else if(phase === "Build"){
+    const reps = clamp(Math.round(target/10), 4, 7), mins = clamp(18 + idx*2, 20, 35);
+    q.q1 = {type:"interval", km:reps + 5, title:"Intervals", detail:`Warm up, ${reps}×1 km at ${I} with 2 min jog, cool down.`};
+    q.q2 = {type:"tempo", km:Math.round(mins/5) + 4, title:"Tempo", detail:`Warm up, ${mins} min continuous at ${T}, cool down.`};
+  }else if(phase === "Peak"){
+    const x = full ? clamp(Math.round(target*.2), 8, 16) : clamp(Math.round(target*.15), 5, 12);
+    q.q1 = {type:"tempo", km:12, title:"Cruise intervals", detail:`Warm up, 4×2 km at ${T} with 90 s jog, cool down.`};
+    q.q2 = {type:"mp", km:x+4, title: full ? "Marathon pace" : "Race pace", detail:`2 ${unit()==="mi"?"mi":"km"} easy, ${distRound(x)} ${unit()} at ${full ? MP : HMP}, 2 ${unit()==="mi"?"mi":"km"} easy.`};
+  }else if(raceDate){
+    q.q1 = {type:"interval", km:6, pk: full ? "mp" : "hmp", title:"Race-pace touch", detail:`Easy with 3×1 km at ${full ? MP : HMP}, 2 min jog between.`};
+    q.q2 = {type:"easy", km:6, title:"Easy", detail:`Easy at ${E}. Stay off your feet afterwards.`};
+  }else{
+    q.q1 = {type:"interval", km:10, title:"Sharpener", detail:`Warm up, 5×1 km at ${I} with full recovery, cool down.`};
+    q.q2 = {type:"mp", km:(full ? 6 : 4)+4, title:"Race pace", detail:`Warm up, ${distRound(full ? 6 : 4)} ${unit()} at ${full ? MP : HMP}, cool down.`};
+  }
+  if(cut){ q.q1 = {type:"strides", title:"Easy + strides", detail:`Recovery week. Easy at ${E} with 6 relaxed strides.`}; q.q2 = {type:"steady", title:"Easy", detail:`Recovery week, keep it at ${E}.`}; }
+
+  if(fixedDays){
+    // keep the number of runs you asked for: if the week is too small for two hard sessions plus real easy runs,
+    // the second session becomes an easy run, and the long run gives up room only as a last resort
+    const qk = k => tpl[k] !== undefined && q[k] ? (q[k].km || Math.max(5, target*.17)) : 0;
+    if(tpl.q2 !== undefined && target - lr - qk("q1") - qk("q2") < tpl.easy.length*5){ tpl.easy.push(tpl.q2); delete tpl.q2; }
+    const room = target - qk("q1") - qk("q2") - tpl.easy.length*4.5;
+    if(lr > 0 && room < lr) lr = Math.max(Math.min(lr, target*.33), room);
+  }
+  let used = 0;
+  if(lr > 0){
+    let ld = `Long run at ${E}.`;
+    if(full && phase === "Peak" && idx % 2 === 0) ld = `Long run at ${E}, final ${distRound(6)} ${unit()} at ${MP}.`;
+    if(!full && phase === "Peak" && idx % 2 === 0) ld = `Long run at ${E}, final ${distRound(4)} ${unit()} at ${HMP}.`;
+    Object.assign(days[tpl.long], {type:"long", km:lr, title:"Long run", detail:ld}); used += lr;
+  }
+  const qkm = Math.max(5, target*.17);
+  ["q1","q2"].forEach(k => { if(tpl[k] !== undefined && q[k]){ const km = q[k].km || qkm; Object.assign(days[tpl[k]], q[k], {km}); used += km; } });
+  while(!fixedDays && tpl.easy.length > 1 && (target - used) / tpl.easy.length < 5) tpl.easy.shift();
+  const easyKm = Math.max(4, (target - used) / tpl.easy.length);
+  tpl.easy.forEach(d => Object.assign(days[d], {type:"easy", km:easyKm, title:"Easy", detail:`Easy at ${E}. Keep it truly relaxed.`}));
+
+  if(raceDate){
+    const rd = dowIdx(raceDate), raceKm = full ? 42.195 : 21.0975;
+    days.forEach(d => {
+      if(d.dow === rd){ Object.assign(d, {type:"race", km:raceKm, raceKm, title: targetRace() ? raceLabel(targetRace()) : (full ? "Marathon" : "Half marathon"), detail:`Race day. Start at ${full ? MP : HMP} and hold back for the first third.`}); }
+      else if(d.dow === rd-1){ Object.assign(d, {type:"easy", km:Math.min(4, d.km || 4), pk:"recovery", title:"Shakeout", detail:`20 min very easy with 4 short strides.`}); }
+      else if(d.dow > rd){ Object.assign(d, {type:"rest", km:0, title:"Recover", detail:"Walk, stretch, celebrate."}); }
+      else if(d.dow === rd-2){ Object.assign(d, {type:"rest", km:0, title:"Rest", detail:"Rest, hydrate, lay out race kit."}); }
+    });
+  }
+  if(!raceDate){
+    const wkEnd = addDays(monday, 7), tr = targetRace();
+    state.profile.races.filter(r => !tr || r.id !== tr.id).forEach(r => {
+      const rdD = parseD(r.date); if(rdD < monday || rdD >= wkEnd) return;
+      const rd = dowIdx(rdD), info = DIST[r.dist];
+      days.forEach(d => {
+        if(d.dow === rd) Object.assign(d, {type:"race", km:info.km, raceKm:info.km, pk:"tune", tuneDist:r.dist, title:raceLabel(r), detail:`${info.label} race${r.goal ? `, goal ${r.goal}` : ""}. Warm up for 15 min before the start, and treat it as this week’s hard session.`});
+        else if(d.dow === rd-1 && d.km) Object.assign(d, {type:"easy", km:Math.min(5, d.km), pk:"recovery", title:"Shakeout", detail:"Short and very easy, with 4 relaxed strides."});
+        else if(d.dow === rd+1 && d.km) Object.assign(d, {type:"easy", km:Math.min(6, d.km), pk:"recovery", title:"Recovery", detail:`Very easy at ${E}, or rest if your legs are sore.`});
+      });
+    });
+  }
+  days.forEach(d => { if(d.km){ const u = unit()==="mi" ? d.km/MI : d.km; d.km = (Math.round(u*2)/2) * (unit()==="mi" ? MI : 1); if(d.type === "race") d.km = d.raceKm; } });
+  days.forEach(d => { if(d.km && !d.pk) d.pk = ({long:"easy", strides:"easy", steady:"steady", tempo:"t", interval:"i", mp: full ? "mp" : "hmp", race:"race"})[d.type] || "easy"; });
+  const total = days.reduce((s,d)=>s+d.km,0);
+  return {monday, phase, days, total, cut, long: days.find(d=>d.type==="long")?.km || 0};
+}
+
+/* ---------- sample data ---------- */
+function sampleRuns(){
+  const t = today0(), runs = [], v = 44, rnd = () => (Math.random()-.5);
+  const P = {easy: paceAt(v,.64), long: paceAt(v,.655), tempo: paceAt(v,.83)};
+  for(let w=6; w>=0; w--){
+    const mon = addDays(mondayOf(t), -7*w);
+    const add = (d, km, type, pace, notes) => { const date = addDays(mon,d); if(date > t) return; runs.push({id:uid(), date:iso(date), km:+km.toFixed(2), min:+(km*pace*(1+rnd()*.05)).toFixed(2), type, notes:notes||"", hr:({easy:142,long:146,tempo:166,intervals:158,race:174})[type] + Math.round(rnd()*8)}); };
+    add(1, 8 + rnd()*2, "intervals", paceAt(v,.74), "6×800 m");
+    add(2, 7 + rnd()*2, "easy", P.easy);
+    add(3, 7 + rnd(), "tempo", P.tempo, "Tempo portion only");
+    add(5, 6 + rnd()*2, "easy", P.easy);
+    if(w <= 2){ const sd = addDays(mon,4); if(sd <= t) runs.push({id:uid(), sport:"swim", date:iso(sd), km:1.5, min:+(31 + rnd()*3).toFixed(2), type:"pool", notes:"Easy aerobic", hr:128 + Math.round(rnd()*8)}); }
+    if(w === 2) add(6, 10, "race", raceTime(v,10)/10, "Local 10K");
+    else add(6, 14 + (6-w)*1.3 + rnd(), "long", P.long);
+  }
+  return runs;
+}
+
+/* ---------- views ---------- */
+function confDots(n){ return `<span class="conf" aria-label="Confidence ${["","low","medium","high"][n]}">${[1,2,3].map(i=>`<i class="${i<=n?"on":""}"></i>`).join("")} ${["","Low","Medium","High"][n]} confidence</span>`; }
+
+function renderOverview(){
+  const el = document.getElementById("view-overview");
+  const t = today0(), pred = weeklyPred(), full = state.profile.race === "full";
+  const bi = blockInfo(), plan = bi.cur;
+  const goalMin = parseDuration(state.profile.goal);
+  let hero;
+  if(!pred){
+    hero = `<div class="clockboard">
+      <div class="clock-head"><h2>Finish prediction</h2><p>Updates with every run you log</p></div>
+      <div class="clocks">
+        <div class="clock-cell"><div class="label">Half marathon ${!full?'<span class="goalflag">Your race</span>':""}</div><div class="clock dim num">–:––:––</div></div>
+        <div class="clock-cell"><div class="label">Marathon ${full?'<span class="goalflag">Your race</span>':""}</div><div class="clock dim num">–:––:––</div></div>
+      </div>
+      <p class="clock-sub" style="margin-top:10px">${runsOnly().some(r => parseD(r.date) >= mondayOf(t)) ? `Predictions update once a week. The runs you log this week give you your first prediction on ${fmtDay(addDays(mondayOf(t),7))}.` : "Log runs from the last six weeks to get your first prediction. It updates every Monday. A recent race or tempo run makes it sharper."}</p>
+      <div class="hero-empty"><a class="btn onhero primary" href="#log">Log a run</a><button class="btn onhero" data-act="sample">Try with sample runs</button></div>
+    </div>`;
+  }else{
+    const cell = (label, s, km, isGoal) => {
+      const mins = s.abs;
+      let gap = "";
+      if(isGoal && isFinite(goalMin) && goalMin > 30){
+        const d = mins - goalMin;
+        gap = ` · ${Math.abs(d) < .5 ? "on goal" : d > 0 ? `<b>${fmtHMS(d)}</b> off your ${fmtHMS(goalMin)} goal` : `<b>${fmtHMS(-d)}</b> under your ${fmtHMS(goalMin)} goal`}`;
+      }
+      return `<div class="clock-cell"><div class="label">${label} ${isGoal?'<span class="goalflag">Your race</span>':""}</div>
+        <div class="clock num">${fmtHMS(mins)}</div>
+        <div class="clock-sub">Absolute, most likely · <b class="num">${fmtPace(mins/km)}</b>${paceUnit()}${gap}</div>
+        <div class="range" aria-hidden="true"><span class="range-dot" style="left:${((s.abs-s.amb)/Math.max(.01,s.worst-s.amb)*100).toFixed(1)}%"></span></div>
+        <div class="scen">
+          <div><span>Ambitious</span><b class="num">${fmtHMS(s.amb)}</b><span class="num">${fmtPace(s.amb/km)}${paceUnit()}</span></div>
+          <div><span>Worst case</span><b class="num">${fmtHMS(s.worst)}</b><span class="num">${fmtPace(s.worst/km)}${paceUnit()}</span></div>
+        </div></div>`;
+    };
+    hero = `<div class="clockboard">
+      <div class="clock-head"><h2>Finish prediction</h2><p>${confDots(pred.fit.conf)} · runs through ${fmtDay(predRefDate())}${predRefDate() < t ? ` · <button class="linkbtn" data-act="prednow">Update now</button>` : " (up to date)"} · next update ${fmtDay(addDays(mondayOf(t),7))}</p></div>
+      <div class="clocks">${cell("Half marathon", pred.scen.hm, 21.0975, !full)}${cell("Marathon", pred.scen.fm, 42.195, full)}</div>
+      <p class="clock-sub small" style="margin:14px 0 0;max-width:72ch">Updated every Monday from your runs up to the Sunday before, or straight away when you tap Update now. Ambitious is a great day: you race at the top of what your recent runs show and your training gaps barely bite. Worst case is a tough day: fitness at the low end, gaps biting harder, plus some heat or pacing trouble. The range narrows as confidence rises.</p>
+    </div>`;
+  }
+
+  // this week
+  let weekHtml = "";
+  if(plan.past){
+    weekHtml = `<div class="panel"><h3>Your race date has passed</h3><p class="muted">Set your next race in Settings to get a fresh plan.</p><a class="btn" href="#settings">Open settings</a></div>`;
+  }else{
+    const wk = plan.weeks[bi.weekIdx] || plan.weeks[0], toRace = plan.nWeeks - bi.weekIdx;
+    const inWeek = r => { const d = parseD(r.date); return d >= wk.monday && d < addDays(wk.monday,7); };
+    const done = runsOnly().filter(inWeek), swims = swimsOnly().filter(inWeek);
+    const swimKm = swims.reduce((s,r)=>s+r.km,0), swimMin = swims.reduce((s,r)=>s+r.min,0);
+    const doneKm = done.reduce((s,r)=>s+r.km,0);
+    const pctDone = wk.total ? Math.min(100, doneKm/wk.total*100) : 0;
+    const todayIdx = dowIdx(t);
+    const daysHtml = wk.days.map(d => {
+      const ran = done.filter(r => r.date === iso(d.date));
+      const ranKm = ran.reduce((s,r)=>s+r.km,0);
+      let cls = "day";
+      if(d.dow === todayIdx) cls += " today";
+      if(ran.length) cls += " done";
+      else if(d.dow < todayIdx && d.km) cls += " missed";
+      if(!d.km && !ran.length) cls += " rest";
+      const sw = swims.filter(r => r.date === iso(d.date));
+      const swTxt = sw.length ? `<span class="dswim">+ swim ${swimDist(sw.reduce((s,r)=>s+r.km,0))}</span>` : "";
+      const kmTxt = ran.length ? `${dist(ranKm)}<span class="tick"> ✓</span>` : d.km ? distRound(d.km) : "—";
+      return `<div class="${cls}"><span class="dow">${DOW[d.dow]}${d.dow===todayIdx?" · today":""}</span><span class="dkm">${kmTxt}</span><span class="dtype">${ran.length && !d.km ? "Extra run" : esc(d.title)}</span>${swTxt}${wxFor(d.date) ? `<span class="dwx">${Math.round(wxFor(d.date).runT)}°C</span>` : ""}</div>`;
+    }).join("");
+    const td = wk.days[todayIdx];
+    const ranToday = done.some(r => r.date === iso(t));
+    const todayMsg = ranToday ? `<p><b>Today’s run is logged.</b> Nice work.</p>`
+      : td.km ? `<p><b>Today: ${esc(td.title)}, ${distRound(td.km)} ${unit()}.</b> ${esc(td.detail)}</p>${targetHtml(td, plan.paces)}${shoeForSession(td) ? `<div class="tgt">Shoes: <b>${esc(shoeForSession(td).name)}</b></div>` : ""}`
+      : `<p><b>Today: ${esc(td.title)}.</b> ${esc(td.detail)}</p>`;
+    weekHtml = `<div class="panel">
+      <div class="week-head"><h3>This week · ${wk.phase} phase</h3><span class="muted small">${toRace} week${toRace>1?"s":""} to race day${plan.assumed?" (assumed — add a race in Settings)":""}</span></div>
+      <div class="muted"><span class="num" style="font-size:1.3rem;color:var(--ink);font-weight:600">${dist(doneKm)}</span> of ${distRound(wk.total)} ${unit()} done</div>
+      <div class="progress" role="progressbar" aria-valuenow="${Math.round(pctDone)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pctDone}%"></span></div>
+      <div class="days">${daysHtml}</div>
+      ${swims.length ? `<p class="muted small" style="margin:12px 0 0">Cross-training this week: ${swims.length} swim${swims.length>1?"s":""}, ${swimDist(swimKm)} in ${fmtHMS(swimMin)}.</p>` : ""}
+      <div class="today-card">${todayMsg}</div>
+    </div>`;
+  }
+
+  // paces + factors
+  let pacesHtml = "", factorsHtml = "";
+  if(pred){
+    const p = trainingPaces(pred.fit.vdot, pred);
+    const rows = [["Easy","Most of your running, long runs", `${fmtPace(p.easy[0])}–${fmtPace(p.easy[1])}`],
+      ["Marathon","Race-specific long efforts", fmtPace(p.mp)],
+      ["Half marathon","Race-pace segments", fmtPace(p.hmp)],
+      ["Threshold","Tempo runs, cruise intervals", fmtPace(p.t)],
+      ["Interval","Repeats of 3–5 minutes", fmtPace(p.i)],
+      ["Repetition","Short, fast reps and strides", fmtPace(p.r)]];
+    pacesHtml = `<div class="panel"><h3>Your training paces</h3><p class="muted small">From current fitness (VDOT ${pred.fit.vdot.toFixed(1)}), per ${unit()}.</p>
+      <div class="scroll"><table class="paces"><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td class="muted small">${r[1]}</td><td class="r num">${r[2]}</td></tr>`).join("")}</tbody></table></div></div>`;
+    const f = (x) => x < .0005 ? `<span class="pen zero">no penalty</span>` : `<span class="pen plus">+${(x*100).toFixed(1)}%</span>`;
+    const raw = full ? pred.fmRaw : pred.hmRaw;
+    const pv = full ? pred.pen.fmVol : pred.pen.hmVol, pl = full ? pred.pen.fmLong : pred.pen.hmLong;
+    const vT = full ? 60 : 35, lT = full ? 30 : 16;
+    factorsHtml = `<div class="panel"><h3>What’s shaping your ${full?"marathon":"half marathon"} time</h3>
+      <ul class="factors">
+        <li><span>Speed from your runs<br><span class="muted small">${pred.fit.races ? `${pred.fit.races} race result${pred.fit.races>1?"s":""} plus training` : "Training runs only — a race or time trial sharpens this"}</span></span><span class="pen num">${fmtHMS(raw)}</span></li>
+        <li><span>Weekly volume: ${dist(pred.vol.weekly)} ${unit()}<br><span class="muted small">Penalty fades at ${distRound(vT)} ${unit()} a week</span></span>${f(pv)}</li>
+        <li><span>Longest run: ${dist(pred.vol.long42)} ${unit()}<br><span class="muted small">Penalty fades at ${distRound(lT)} ${unit()}</span></span>${f(pl)}</li>
+      </ul></div>`;
+  }
+
+  el.innerHTML = `<div class="stack">${hero}${statusHtml(bi)}
+    ${shoesHtml()}
+    <div class="grid2">${volumeChart(bi)}${trendChart()}</div>
+    ${pred ? `<div class="grid2">${pacesHtml}${factorsHtml}</div>` : ""}
+    ${racesPanel(pred)}
+  </div>`;
+}
+
+// Race-day projection: today’s fitness, with the endurance slowdown recalculated for the weekly distance
+// and long run the plan builds you up to before that race. No fitness gain is assumed.
+function projectRace(r, pred){
+  const km = DIST[r.dist].km, weeks = Math.max(0, Math.round((parseD(r.date) - today0())/(7*DAY)));
+  const v = pred.fit.vdot, spread = [0, 2.8, 1.8, 1.0][pred.fit.conf];
+  const full = r.dist === "full", half = r.dist === "half";
+  if(!full && !half){
+    const t = raceTime(v, km);
+    return {weeks, today:t, proj:t, amb:raceTime(v + spread, km), worst:raceTime(v - spread, km)*1.01};
+  }
+  const base = Math.max(15, pred.vol.weekly), build = Math.max(0, weeks - (full ? 3 : 2));
+  const wk = Math.min(full ? clamp(base*1.5, 45, 95) : clamp(base*1.4, 30, 70), base*Math.pow(1.07, build));
+  const lg = Math.max(pred.vol.long42, Math.min(full ? 32 : 19, pred.vol.long42 + 1.6*build));
+  const pen = full ? clamp((60 - wk)*.0025, 0, .10) + clamp((30 - lg)*.004, 0, .08) : clamp((35 - wk)*.002, 0, .05) + clamp((16 - lg)*.004, 0, .04);
+  return {weeks, wk, lg, today: full ? pred.fm : pred.hm, proj: raceTime(v, km)*(1 + pen),
+    amb: raceTime(v + spread, km)*(1 + pen*.5), worst: raceTime(v - spread, km)*(1 + pen*1.5 + (full ? .03 : .01))};
+}
+// Chance of beating a goal: race-day time treated as a skewed bell curve around the projection,
+// with the ambitious time as the 10th percentile and the worst case as the 90th.
+function normCdf(z){ const t = 1/(1 + .2316419*Math.abs(z)), d = .3989423*Math.exp(-z*z/2);
+  const p = d*t*(.3193815 + t*(-.3565638 + t*(1.781478 + t*(-1.821256 + t*1.330274)))); return z > 0 ? 1 - p : p; }
+function goalChance(p, goal){
+  const lo = Math.max(1e-4, Math.log(p.proj/p.amb)/1.2816), hi = Math.max(1e-4, Math.log(p.worst/p.proj)/1.2816);
+  const x = Math.log(goal/p.proj);
+  return normCdf(x / (x < 0 ? lo : hi));
+}
+function chanceHtml(c){
+  const pct = Math.round(c*100), shown = pct < 1 ? "<1%" : pct > 99 ? ">99%" : pct + "%";
+  const [label, color] = c >= .8 ? ["Very likely", "var(--good)"] : c >= .5 ? ["Likely", "var(--good)"] : c >= .2 ? ["Possible", "var(--clock)"] : c >= .05 ? ["A stretch", "var(--warn)"] : ["Unlikely", "var(--warn)"];
+  return `<span class="num chance" style="color:${color}">${shown}</span><div class="chancebar"><span style="width:${Math.max(2, Math.min(100, pct))}%;background:${color}"></span></div><div class="muted small">${label}</div>`;
+}
+function racesPanel(pred){
+  const up = upcomingRaces(); if(!up.length) return "";
+  const tr = targetRace();
+  if(!pred) return `<div class="panel"><h3>Projected finish times</h3><p class="muted" style="margin:0">Projections for your ${up.length} upcoming race${up.length>1?"s":""} appear with your first weekly prediction.</p></div>`;
+  const rows = up.map(r => {
+    const p = projectRace(r, pred), km = DIST[r.dist].km, gm = parseDuration(r.goal), isT = tr && tr.id === r.id;
+    let gap = "";
+    if(gm > 10){ const d = p.proj - gm; gap = Math.abs(d) < .5 ? `<span class="pen zero">on goal</span>` : d > 0 ? `<span class="pen plus">${fmtHMS(d)} off ${esc(r.goal)}</span>` : `<span class="pen zero">${fmtHMS(-d)} under ${esc(r.goal)}</span>`; }
+    return `<tr>
+      <td><b>${esc(raceLabel(r))}</b>${isT ? ` <span class="typechip" style="background:var(--clock);color:#13203A">Main race</span>` : ""}<div class="muted small">${DIST[r.dist].label} · ${fmtDay(parseD(r.date))} · ${p.weeks} week${p.weeks===1?"":"s"} away</div></td>
+      <td class="r num">${fmtHMS(p.today)}</td>
+      <td class="r"><span class="num proj">${fmtHMS(p.proj)}</span><div class="muted small num">${fmtPace(p.proj/km)}${paceUnit()}</div></td>
+      <td class="r num small">${fmtHMS(p.amb)}–${fmtHMS(p.worst)}</td>
+      <td class="r small">${gap || '<span class="muted">no goal set</span>'}</td>
+      <td class="r" style="min-width:110px">${gm > 10 ? chanceHtml(goalChance(p, gm)) : '<a class="small" href="#settings">Add a goal</a>'}</td></tr>`;
+  }).join("");
+  return `<div class="panel"><div class="week-head"><h3>Projected finish times</h3><a class="small" href="#settings">Edit races</a></div>
+    <div class="scroll"><table class="projtable"><thead><tr><th>Race</th><th class="r">If raced today</th><th class="r">On race day</th><th class="r">Range</th><th class="r">vs goal</th><th class="r">Chance of goal</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="note">“On race day” keeps today’s fitness and assumes you follow the plan up to each race: weekly distance growing about 7% a week and long runs about ${dist(1.6)} ${unit()} longer each week, until the taper. Faster fitness from that training isn’t counted, so it’s on the cautious side. The range runs from ambitious to worst case. The chance of hitting your goal treats race day as a spread of likely outcomes around the projection, with the ambitious time as a 1-in-10 good day and the worst case as a 1-in-10 bad day. Updated every Monday.</p></div>`;
+}
+
+/* ---------- training status & next run ---------- */
+let quickMsg = "";
+function plannedDay(bi, date){
+  for(const pl of [bi.cur, bi.next]) if(pl && !pl.past) for(const w of pl.weeks) for(const d of w.days) if(iso(d.date) === iso(date)) return {d, paces: pl.paces};
+  return null;
+}
+function trainingStatus(bi){
+  const t = today0(), runs = runsOnly(), dayKm = ds => runs.filter(r => r.date === ds).reduce((a,r) => a + r.km, 0);
+  const ranToday = dayKm(iso(t)) > 0;
+  // plan completion over the last 7 days (today counts once you’ve logged it)
+  let planned = 0, actual = 0, days = 0, keyPlanned = 0, keyDone = 0;
+  for(let i = ranToday ? 0 : 1; i <= (ranToday ? 6 : 7); i++){
+    const dt = addDays(t, -i), pd = plannedDay(bi, dt); if(!pd) continue;
+    days++; planned += pd.d.km; const got = dayKm(iso(dt)); actual += got;
+    if(["long","tempo","interval","mp","race"].includes(pd.d.type)){ keyPlanned++; if(got >= pd.d.km*.7) keyDone++; }
+  }
+  const adh = days >= 3 && planned > 0 ? actual/planned : null;
+  // training load: last 7 days against your average week over the 4 weeks before
+  const age = r => (t - parseD(r.date))/DAY;
+  const acute = runs.filter(r => age(r) >= 0 && age(r) < 7).reduce((s,r) => s + r.km, 0);
+  const chronic = runs.filter(r => age(r) >= 7 && age(r) < 35).reduce((s,r) => s + r.km, 0)/4;
+  const load = chronic > 5 ? acute/chronic : null;
+  // fitness trend over 4 weeks
+  const now = predict(runs, t), before = predict(runs, addDays(t, -28));
+  const dV = now && before ? now.fit.vdot - before.fit.vdot : null;
+  const sA = adh === null ? 20 : 40*clamp(1 - Math.abs(1 - Math.min(adh, 1.3))*1.5, 0, 1);
+  const sL = load === null ? 15 : load >= .8 && load <= 1.3 ? 30 : load < .8 ? 30*clamp((load - .4)/.4, 0, 1) : 30*clamp((1.8 - load)/.5, 0, 1);
+  const sF = dV === null ? 15 : clamp(15 + dV*10, 0, 30);
+  const score = Math.round(sA + sL + sF);
+  const [label, color] = score >= 80 ? ["Excellent","var(--good)"] : score >= 65 ? ["Good","var(--good)"] : score >= 45 ? ["Average","var(--clock)"] : ["Poor","var(--warn)"];
+  let advice = "";
+  if(load !== null && load > 1.5) advice = "Your load jumped quickly this week. Keep the next couple of runs truly easy.";
+  else if(load !== null && load < .6) advice = "You’ve run much less than usual this week. Ease back in rather than making up the distance.";
+  else if(adh !== null && adh < .7) advice = "You’re behind the plan. Don’t cram missed runs — just pick up from the next session.";
+  else if(adh !== null && adh > 1.25) advice = "You’re running well over the plan. Extra distance now raises injury risk more than it builds fitness.";
+  else if(score >= 80) advice = "Training is on track. Keep doing what you’re doing.";
+  else advice = "Steady. Hit your key sessions and keep easy days easy.";
+  return {score, label, color, adh, actual, planned, keyPlanned, keyDone, load, acute, chronic, dV, vdot: now ? now.fit.vdot : null, sA, sL, sF, advice};
+}
+function statusHtml(bi){
+  const s = trainingStatus(bi), t = today0();
+  // score ring
+  const C = 2*Math.PI*34, ring = `<svg class="ring" viewBox="0 0 84 84" role="img" aria-label="Score ${s.score} out of 100">
+    <circle cx="42" cy="42" r="34" fill="none" stroke="var(--track-soft)" stroke-width="9"/>
+    <circle class="ring-val" cx="42" cy="42" r="34" fill="none" stroke="${s.color}" stroke-width="9" stroke-linecap="round" transform="rotate(-90 42 42)" stroke-dasharray="${(s.score/100*C).toFixed(1)} ${C.toFixed(1)}" style="--ring:${C.toFixed(1)}"/>
+    <text x="42" y="47" text-anchor="middle" class="ring-num">${s.score}</text></svg>`;
+  // last 7 days, tappable
+  const runs7 = runsOnly(), dayInfo = [];
+  for(let i=6; i>=0; i--){
+    const dt = addDays(t, -i), ds = iso(dt), pd = plannedDay(bi, dt);
+    const got = runs7.filter(r => r.date === ds), km = got.reduce((a,r)=>a+r.km,0);
+    const plannedKm = pd ? pd.d.km : 0;
+    const cls = km && plannedKm ? (km >= plannedKm*.7 ? "done" : "short") : km ? "extra" : plannedKm ? (i === 0 ? "pending" : "missed") : "rest";
+    const label = {done:"Done", short:"Shorter than planned", extra:"Extra run", pending:"Still to do", missed:"Missed", rest:"Rest day"}[cls];
+    const detail = `${fmtDay(dt)} · ${label}. Planned: ${pd ? (plannedKm ? `${pd.d.title}, ${distRound(plannedKm)} ${unit()}` : "rest") : "no plan for this day"}. Ran: ${km ? got.map(r => `${dist(r.km)} ${unit()}${r.min ? ` at ${fmtPace(r.min/r.km)}${paceUnit()}` : ""}${r.hr ? `, ${r.hr} bpm` : ""}`).join(" + ") : "nothing logged"}.`;
+    dayInfo.push(`<button class="sday ${cls}${i===0?" is-today":""}" data-act="sday" data-detail="${esc(detail)}" aria-label="${esc(detail)}"><span>${DOW[dowIdx(dt)].slice(0,2)}</span><b class="num">${km ? dist(km,0) : plannedKm ? "·" : "–"}</b></button>`);
+  }
+  // mini charts for the expandable rows
+  const mon = mondayOf(t), wks = [];
+  for(let w=-5; w<=0; w++){ const m = addDays(mon, 7*w); wks.push({m, km: weekKm(runs7, m), cur: w===0}); }
+  const maxW = Math.max(10, s.chronic, ...wks.map(x=>x.km))*1.15, conv = x => unit()==="mi" ? x/MI : x;
+  const loadSvg = `<svg class="mini" viewBox="0 0 240 90" role="img" aria-label="Weekly distance, last 6 weeks">
+    ${s.chronic ? `<line x1="0" x2="240" y1="${(78 - s.chronic/maxW*70).toFixed(1)}" y2="${(78 - s.chronic/maxW*70).toFixed(1)}" stroke="var(--muted)" stroke-dasharray="4 3"/><text x="238" y="${(74 - s.chronic/maxW*70).toFixed(1)}" text-anchor="end">usual ${dist(s.chronic,0)}</text>` : ""}
+    ${wks.map((x,i) => `<rect x="${i*40+8}" y="${(78 - x.km/maxW*70).toFixed(1)}" width="24" height="${(x.km/maxW*70).toFixed(1)}" rx="3" fill="${x.cur ? "var(--track)" : "var(--track-soft)"}" stroke="var(--track)" stroke-width="${x.cur?0:1}"><title>${shortDate(x.m)}: ${dist(x.km)} ${unit()}</title></rect><text x="${i*40+20}" y="89" text-anchor="middle">${x.cur ? "now" : Math.round(conv(x.km))}</text>`).join("")}</svg>`;
+  const vpts = []; for(let w=-7; w<=0; w++){ const ref = w===0 ? t : addDays(mon, 7*w - 1); const p = predict(runs7, ref); vpts.push(p ? p.fit.vdot : null); }
+  const vv = vpts.filter(x => x !== null);
+  let fitSvg = `<p class="muted small" style="margin:0">Not enough history yet.</p>`;
+  if(vv.length >= 2){
+    const lo = Math.min(...vv) - .5, hi = Math.max(...vv) + .5, X = i => 10 + i*(220/7), Y = v => 70 - (v-lo)/(hi-lo)*60;
+    let path = "", on = false; vpts.forEach((v,i) => { if(v === null){ on = false; return; } path += `${on?"L":"M"}${X(i).toFixed(1)},${Y(v).toFixed(1)} `; on = true; });
+    fitSvg = `<svg class="mini" viewBox="0 0 240 90" role="img" aria-label="Fitness over 8 weeks"><path d="${path}" fill="none" stroke="var(--track)" stroke-width="2.5" stroke-linejoin="round"/>
+      ${vpts.map((v,i) => v === null ? "" : `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${i===7?4.5:3}" fill="${i===7?"var(--clock)":"var(--track)"}"><title>VDOT ${v.toFixed(1)}</title></circle>`).join("")}
+      <text x="10" y="88">8 wks ago</text><text x="230" y="88" text-anchor="end">today ${s.vdot ? s.vdot.toFixed(1) : ""}</text></svg>`;
+  }
+  const tips = {
+    adh: s.adh === null ? "Once a few days of the plan have passed, this compares what you ran with what was planned." : s.adh < .85 ? "Aim to complete the long run and key sessions first; easy runs are the ones to trim when life gets busy." : s.adh > 1.15 ? "Running a lot more than planned adds fatigue faster than fitness. Stick closer to the plan for a week." : "Right on the plan. Keep it up.",
+    load: s.load === null ? "Needs a few weeks of history." : s.load > 1.3 ? "This week is well above your usual. Keep the next days easy so your body can absorb it." : s.load < .8 ? "Lighter than usual. Fine for a recovery week; otherwise ease back toward your normal distance." : "In the sweet spot: enough to build fitness without piling on fatigue.",
+    fit: s.dV === null ? "Log runs with times across a few weeks to see this." : s.dV > .5 ? "Your fitness is rising. The work is paying off." : s.dV < -.5 ? "Fitness has slipped a little. Check for fatigue, heat or missed sessions." : "Holding steady. A tempo run or race will show progress most clearly."
+  };
+  const xrow = (title, value, note, pts, max, inner) => `<details class="xrow"><summary><span>${title}<br><span class="muted small">${note}</span></span><span class="xval"><b class="num">${value}</b><span class="ptbar"><span style="width:${(pts/max*100).toFixed(0)}%"></span></span><span class="muted small">${Math.round(pts)}/${max}</span></span></summary><div class="xbody">${inner}</div></details>`;
+  const statusCard = `<div class="panel status">
+    <div class="status-head">${ring}<div><span class="muted small">Training status · last 7 days</span>
+      <div class="status-label" style="color:${s.color}">${s.label}</div><p class="small" style="margin:2px 0 0">${s.advice}</p></div></div>
+    <div class="sdays" role="group" aria-label="Last 7 days">${dayInfo.join("")}</div>
+    <p class="sday-detail muted small" id="sday-detail" aria-live="polite">Tap a day to see what was planned and what you ran.</p>
+    <div class="xrows">
+      ${xrow("Plan completed", s.adh === null ? "–" : Math.round(s.adh*100) + "%", s.adh === null ? "Needs a few days of plan" : `${dist(s.actual)} of ${distRound(s.planned)} ${unit()}${s.keyPlanned ? ` · ${s.keyDone}/${s.keyPlanned} key session${s.keyPlanned>1?"s":""}` : ""}`, s.sA, 40, `<p class="small" style="margin:0">${tips.adh}</p>`)}
+      ${xrow("Training load", s.load === null ? "–" : s.load.toFixed(2) + "×", s.load === null ? "Needs a few weeks of history" : `${dist(s.acute)} ${unit()} vs ${dist(s.chronic)} usual · best 0.8–1.3×`, s.sL, 30, loadSvg + `<p class="small" style="margin:6px 0 0">${tips.load}</p>`)}
+      ${xrow("Fitness trend", s.dV === null ? "–" : (s.dV >= 0 ? "+" : "") + s.dV.toFixed(1), s.dV === null ? "Needs runs from 4 weeks ago" : `VDOT ${s.vdot.toFixed(1)}, change over 4 weeks`, s.sF, 30, fitSvg + `<p class="small" style="margin:6px 0 0">${tips.fit}</p>`)}
+    </div>
+    <p class="muted small" style="margin:8px 0 0">Tap a row to see the detail.</p></div>`;
+  // up next: today's run until it's logged, then tomorrow's
+  let nextCard;
+  if(bi.cur.past){
+    nextCard = `<div class="panel"><h3>Up next</h3><p class="muted">Your race date has passed. Set your next race in Settings to get a fresh plan.</p><a class="btn" href="#settings">Open settings</a></div>`;
+  }else{
+    const ranToday = runsOnly().some(r => r.date === iso(t)), td = plannedDay(bi, t);
+    const showToday = td && td.d.km && !ranToday;
+    const day = showToday ? t : addDays(t, 1), pd = showToday ? td : plannedDay(bi, day);
+    const when = showToday ? "Today" : "Tomorrow";
+    let body, sess = null;
+    if(!pd){
+      body = `<p class="muted" style="margin:0">Tomorrow starts a new two-week block, planned on ${fmtDay(bi.nextGen)}.</p>`;
+    }else if(!pd.d.km){
+      let nx = null; for(let i=2; i<=7 && !nx; i++){ const p2 = plannedDay(bi, addDays(t, i)); if(p2 && p2.d.km) nx = p2; }
+      body = `<div class="next-title">Rest day</div><p class="muted" style="margin:4px 0 0">${esc(pd.d.detail)}</p>
+        ${nx ? `<div class="next-after"><span class="muted small">Next run · ${fmtDay(nx.d.date)}</span><br><b>${esc(nx.d.title)}, ${distRound(nx.d.km)} ${unit()}</b>${targetHtml(nx.d, nx.paces)}</div>` : ""}`;
+    }else{
+      sess = pd.d;
+      const sh = shoeForSession(pd.d);
+      body = `<div class="next-title">${esc(pd.d.title)} <span class="num">${pd.d.type === "race" ? dist(pd.d.km) : distRound(pd.d.km)} ${unit()}</span></div>
+        <p style="margin:4px 0 0">${esc(pd.d.detail)}</p>${targetHtml(pd.d, pd.paces)}${sh ? `<div class="tgt">Shoes: <b>${esc(sh.name)}</b></div>` : ""}`;
+    }
+    // quick log
+    const LOGTYPE = {long:"long", tempo:"tempo", interval:"intervals", mp:"tempo", race:"race", steady:"easy", strides:"easy", easy:"easy"};
+    let logHtml = "";
+    if(showToday){
+      const kmIn = unit()==="mi" ? sess.km/MI : sess.km;
+      logHtml = `<div class="quicklog" id="quicklog" data-type="${LOGTYPE[sess.type] || "easy"}" data-date="${iso(t)}">
+        <div class="ql-head"><b>Log this run</b><span class="muted small">${TYPES[LOGTYPE[sess.type] || "easy"]} · ${fmtDay(t)}</span></div>
+        <div class="ql-grid">
+          <label class="f">Distance (${unit()})<input type="number" id="ql-dist" inputmode="decimal" step="0.01" min="0" value="${(Math.round(kmIn*100)/100)}"></label>
+          <label class="f">Time<input type="text" id="ql-time" inputmode="numeric" placeholder="mm:ss or h:mm:ss"></label>
+          <label class="f">Avg HR<input type="number" id="ql-hr" inputmode="numeric" min="40" max="230" placeholder="bpm"></label>
+        </div>
+        <p class="err" id="ql-err" role="alert" style="margin:6px 0"></p>
+        <button class="btn primary" data-act="quicklog">Log run</button> <a class="small" href="#log" style="margin-left:8px">More options</a>
+      </div>`;
+    }else if(sess){
+      logHtml = `<p class="muted small" style="margin:14px 0 0">You can log this run here tomorrow once it’s done.</p>`;
+    }
+    const todayLine = !showToday && td ? `<p class="muted small" style="margin:10px 0 0">Today: ${ranToday ? "run logged ✓" : "rest day"}</p>` : "";
+    nextCard = `<div class="panel next"><span class="muted small">Up next · ${when}, ${fmtDay(day)}</span>${body}${logHtml}${todayLine}
+      ${quickMsg ? `<p class="ok small" role="status" style="margin:10px 0 0">${quickMsg}</p>` : ""}
+      <p class="small" style="margin:10px 0 0"><a href="#plan">See the full plan</a></p></div>`;
+    quickMsg = "";
+  }
+  return `<div class="grid2">${statusCard}${nextCard}</div>`;
+}
+
+function volumeChart(bi){
+  const known = {};
+  [bi.cur, bi.next].forEach(pl => pl && !pl.past && pl.weeks.forEach(w => known[iso(w.monday)] = w.total));
+  const t = today0(), mon = mondayOf(t), bars = [];
+  for(let w=-7; w<=3; w++){
+    const m = addDays(mon, 7*w);
+    const actual = w <= 0 ? runsOnly().filter(r => { const d = parseD(r.date); return d >= m && d < addDays(m,7); }).reduce((s,r)=>s+r.km,0) : null;
+    const planned = known[iso(m)] !== undefined && w >= -1 ? known[iso(m)] : null;
+    bars.push({m, actual, planned, cur: w === 0});
+  }
+  const conv = x => unit()==="mi" ? x/MI : x;
+  const max = Math.max(10, ...bars.map(b => Math.max(conv(b.actual||0), conv(b.planned||0)))) * 1.15;
+  const W = 520, H = 210, pl = 34, pb = 26, pt = 10, iw = W-pl-8, ih = H-pt-pb, bw = iw/bars.length;
+  const y = v => pt + ih - conv(v)/max*ih;
+  const step = max > 120 ? 40 : max > 60 ? 20 : 10;
+  let grid = "";
+  for(let g=0; g<=max; g+=step){ const yy = pt + ih - g/max*ih; grid += `<line x1="${pl}" x2="${W-8}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${pl-6}" y="${yy+4}" text-anchor="end">${g}</text>`; }
+  const g = bars.map((b,i) => {
+    const x = pl + i*bw + bw*.18, w = bw*.64; let s = "";
+    if(b.planned !== null) s += `<rect x="${x}" y="${y(b.planned)}" width="${w}" height="${pt+ih-y(b.planned)}" rx="3" fill="none" stroke="var(--track)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    if(b.actual) s += `<rect x="${x}" y="${y(b.actual)}" width="${w}" height="${pt+ih-y(b.actual)}" rx="3" fill="var(--track)"/>`;
+    if(i % 2 === 0 || b.cur) s += `<text x="${x+w/2}" y="${H-8}" text-anchor="middle" ${b.cur?'style="fill:var(--ink);font-weight:600"':""}>${b.cur ? "This wk" : shortDate(b.m)}</text>`;
+    return s;
+  }).join("");
+  return `<div class="panel"><h3>Weekly ${unit()}</h3>
+    <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Weekly distance, past 8 weeks and next 3 planned">${grid}${g}</svg>
+    <div class="legend"><span><i class="sw"></i>Run</span><span><i class="sw plan"></i>Planned</span></div></div>`;
+}
+
+function trendChart(){
+  const t = today0(), full = state.profile.race === "full", pts = [];
+  for(let w=-8; w<=-1; w++){
+    const ref = addDays(mondayOf(t), 7*w + 6);
+    const p = predict(runsOnly(), ref);
+    pts.push({ref, v: p ? (full ? p.fm : p.hm) : null, cur: w===-1});
+  }
+  const vals = pts.filter(p => p.v !== null).map(p => p.v);
+  const label = full ? "Marathon" : "Half marathon";
+  if(vals.length < 2){
+    return `<div class="panel"><h3>${label} prediction over time</h3><p class="muted">A trend line appears after two weekly updates.</p></div>`;
+  }
+  let lo = Math.min(...vals), hi = Math.max(...vals); const pad = Math.max(2, (hi-lo)*.2); lo -= pad; hi += pad;
+  const W = 520, H = 210, pl = 58, pb = 26, pt = 14, iw = W-pl-16, ih = H-pt-pb;
+  const x = i => pl + i*(iw/(pts.length-1));
+  const y = v => pt + (v-lo)/(hi-lo)*ih; // faster (lower) is higher on chart
+  let grid = "";
+  [lo+pad*.5, (lo+hi)/2, hi-pad*.5].forEach(v => { grid += `<line x1="${pl}" x2="${W-16}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${pl-8}" y="${y(v)+4}" text-anchor="end">${fmtHMS(v)}</text>`; });
+  let path = "", started = false;
+  pts.forEach((p,i) => { if(p.v === null){ started = false; return; } path += `${started?"L":"M"}${x(i).toFixed(1)},${y(p.v).toFixed(1)} `; started = true; });
+  const dots = pts.map((p,i) => p.v === null ? "" : `<circle cx="${x(i)}" cy="${y(p.v)}" r="${p.cur?5:3.5}" fill="${p.cur?"var(--clock)":"var(--track)"}" stroke="var(--surface)" stroke-width="1.5"><title>${shortDate(p.ref)}: ${fmtHMS(p.v)}</title></circle>`).join("");
+  const labels = pts.map((p,i) => (i%2===1 || p.cur) ? `<text x="${x(i)}" y="${H-8}" text-anchor="middle" ${p.cur?'style="fill:var(--ink);font-weight:600"':""}>${p.cur?"Latest":shortDate(p.ref)}</text>` : "").join("");
+  const first = vals[0], last = vals[vals.length-1], d = last - first;
+  const change = Math.abs(d) < .5 ? "Holding steady over 8 weeks." : d < 0 ? `${fmtHMS(-d)} faster than 8 weeks ago.` : `${fmtHMS(d)} slower than 8 weeks ago.`;
+  return `<div class="panel"><h3>${label} prediction over time</h3>
+    <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} prediction trend">${grid}<path d="${path}" fill="none" stroke="var(--track)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}${labels}</svg>
+    <p class="muted small" style="margin:6px 0 0">${change} Faster is higher.</p></div>`;
+}
+
+let logMsg = "", logSport = "run";
+function renderLog(){
+  const el = document.getElementById("view-log");
+  const runs = [...state.runs].sort((a,b) => b.date.localeCompare(a.date) || 0);
+  const rows = runs.slice(0, 200).map(r => { const sw = r.sport === "swim"; return `<tr>
+      <td class="num">${shortDate(parseD(r.date))}</td>
+      <td><span class="typechip${sw?" swimchip":""}">${sw ? "Swim · " + SWIM_TYPES[r.type] : "Run · " + TYPES[r.type]}</span>${!sw && shoeOfRun(r) ? `<div class="muted small">${esc(shoeOfRun(r).name)}</div>` : ""}${r.notes ? `<div class="muted small">${esc(r.notes)}</div>` : ""}</td>
+      <td class="r num">${sw ? swimDist(r.km) : dist(r.km, 2) + " " + unit()}</td>
+      <td class="r num">${r.min ? fmtHMS(r.min) : "–"}</td>
+      <td class="r num">${sw ? swimPace(r.km, r.min) : (r.min ? fmtPace(r.min/r.km) + paceUnit() : "–")}</td>
+      <td class="r num">${r.hr ? r.hr : "–"}</td>
+      <td class="r"><button class="iconbtn" data-del="${esc(r.id)}" aria-label="Delete ${sw?"swim":"run"} on ${shortDate(parseD(r.date))}">✕</button></td></tr>`; }).join("");
+  const swim = logSport === "swim", su = unit()==="mi" ? "yd" : "m";
+  el.innerHTML = `<h2>Log an activity</h2><p class="lede">Runs update your predictions and reshape the weeks ahead. Swims are tracked as cross-training.</p>
+  <div class="grid2" style="align-items:start">
+    <div class="panel">
+      <div class="form" id="runform">
+        <div class="f full"><span style="font-weight:500;font-size:.92rem">Activity</span>
+          <div class="seg" role="group" aria-label="Activity">
+            <button data-act="sport" data-val="run" aria-pressed="${!swim}">Run</button>
+            <button data-act="sport" data-val="swim" aria-pressed="${swim}">Swim</button>
+          </div></div>
+        <label class="f">Date<input type="date" id="f-date" value="${iso(today0())}" max="${iso(today0())}"></label>
+        <label class="f">${swim?"Where":"Type"}<select id="f-type">${Object.entries(swim ? SWIM_TYPES : TYPES).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label>
+        <label class="f">Distance (${swim ? su : unit()})<input type="number" id="f-dist" inputmode="decimal" step="${swim?"25":"0.01"}" min="0" placeholder="${swim ? "1500" : unit()==="mi"?"6.2":"10"}"></label>
+        <label class="f">Time${swim ? "" : " <small>Optional, needed for predictions</small>"}<input type="text" id="f-time" inputmode="numeric" placeholder="${swim?"32:00":"52:30 or 1:45:00"}"></label>
+        ${swim ? "" : `<label class="f">Shoes<select id="f-shoe">${activeShoes().map(sh => `<option value="${esc(sh.id)}" ${defaultShoeFor("easy") && defaultShoeFor("easy").id === sh.id ? "selected" : ""}>${esc(sh.name)}</option>`).join("")}<option value="none">Other / not tracked</option></select></label>`}
+        <label class="f">Avg heart rate <small>Optional, bpm</small><input type="number" id="f-hr" inputmode="numeric" min="40" max="230" step="1" placeholder="148"></label>
+        <label class="f">Notes <small>Optional</small><input type="text" id="f-notes" maxlength="200" placeholder="${swim?"Main set, drills, how it felt":"How it felt, route, workout"}"></label>
+        <p class="full muted small" id="f-hint" style="margin:0">${swim ? "Swims show in your week as cross-training. They don’t change your running predictions or plan distances." : "Easy runs give a rough read on fitness. For tempo runs, log just the tempo portion. Intervals count toward volume, not prediction."}</p>
+        <p class="err full" id="f-err" role="alert">${logMsg}</p>
+        <div class="full"><button class="btn primary" data-act="addrun">${swim?"Add swim":"Add run"}</button></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Recent activity</h3>
+      ${runs.length ? `<div class="scroll"><table><thead><tr><th>Date</th><th>Activity</th><th class="r">Distance</th><th class="r">Time</th><th class="r">Pace</th><th class="r">HR</th><th class="r"><span class="sr" style="position:absolute;left:-9999px">Delete</span></th></tr></thead><tbody>${rows}</tbody></table></div>`
+        : `<p class="muted">Nothing logged yet. Add your first run, or load six weeks of sample runs to explore.</p><button class="btn" data-act="sample">Load sample runs</button>`}
+    </div>
+  </div>`;
+  el.insertAdjacentHTML("beforeend", stravaPanel());
+  logMsg = "";
+}
+
+/* ---------- Strava import (activities.csv from Strava's data export) ---------- */
+let stravaPreview = null, stravaMsg = "", stravaRange = "84";
+function parseCSV(text){
+  const rows = []; let row = [], f = "", q = false;
+  for(let i=0; i<text.length; i++){
+    const c = text[i];
+    if(q){ if(c === '"'){ if(text[i+1] === '"'){ f += '"'; i++; } else q = false; } else f += c; }
+    else if(c === '"') q = true;
+    else if(c === ","){ row.push(f); f = ""; }
+    else if(c === "\n" || c === "\r"){ if(c === "\r" && text[i+1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += c;
+  }
+  if(f !== "" || row.length){ row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(x => x.trim() !== ""));
+}
+function numOf(x){ const n = parseFloat(String(x || "").replace(/,/g, "")); return isFinite(n) ? n : NaN; }
+function stravaDate(x){
+  const s = String(x || "").trim(); if(!s) return null;
+  const iso8 = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(iso8) return `${iso8[1]}-${iso8[2]}-${iso8[3]}`;
+  const d = new Date(s.replace(/,(?=\s*\d{1,2}:)/, "") + (/[zZ]|UTC|GMT|[+-]\d{2}:?\d{2}$/.test(s) ? "" : " UTC")); // Strava export times are UTC
+  return isNaN(d) ? null : iso(d);
+}
+function guessType(name, km, hr, hrm){
+  const n = (name || "").toLowerCase();
+  if(/\brace\b|marathon|\b10k\b|\b5k\b|parkrun|time trial/.test(n)) return "race";
+  if(/interval|repeats|\d+\s*[x×]\s*\d+|track|fartlek/.test(n)) return "intervals";
+  if(/tempo|threshold|progression/.test(n)) return "tempo";
+  // generic names (“Morning Run”): judge the effort from average heart rate
+  if(hr && hrm && km >= 4){
+    const f = hr / hrm, raceDist = [5, 10, 21.0975, 42.195].some(x => Math.abs(km - x) <= x*.03);
+    if(f >= .86 && raceDist) return "race";
+    if(f >= .84 && km < 18) return "tempo";
+  }
+  if(/long/.test(n) || km >= 18) return "long";
+  return "easy";
+}
+function readStrava(text){
+  const rows = parseCSV(text); if(rows.length < 2) throw "That file has no activities in it.";
+  const h = rows[0].map(x => x.trim().toLowerCase());
+  const col = (name, nth=0) => { let k = -1; for(let i=0, seen=0; i<h.length; i++) if(h[i] === name){ if(seen === nth){ k = i; break; } seen++; } return k; };
+  const cDate = col("activity date"), cType = col("activity type"), cName = col("activity name"), cId = col("activity id");
+  const cDist1 = col("distance"), cDist2 = col("distance", 1), cMove = col("moving time"), cElapsed = col("elapsed time"), cHr = col("average heart rate");
+  if(cDate < 0 || cType < 0 || cDist1 < 0) throw "This doesn’t look like Strava’s activities.csv. It needs Activity Date, Activity Type and Distance columns.";
+  const out = []; let other = 0;
+  const cMax = col("max heart rate", 1) >= 0 ? col("max heart rate", 1) : col("max heart rate");
+  const seenMax = rows.slice(1).filter(r => /run/i.test(r[cType] || "")).map(r => numOf(r[cMax])).filter(x => x >= 120 && x <= 230).sort((a,b) => a-b);
+  const hrm = hrMax() && !hrMax().est ? hrMax().v : seenMax.length ? seenMax[Math.floor(seenMax.length*.98)] : (hrMax() ? hrMax().v : null);
+  for(const r of rows.slice(1)){
+    const type = (r[cType] || "").trim().toLowerCase();
+    const sport = /swim/.test(type) ? "swim" : /run/.test(type) ? "run" : null;
+    if(!sport){ other++; continue; }
+    const date = stravaDate(r[cDate]); if(!date) continue;
+    // the second Distance column is in metres; the first is in the account's display units (km for runs)
+    const m2 = cDist2 >= 0 ? numOf(r[cDist2]) : NaN, d1 = numOf(r[cDist1]);
+    let km = m2 > 0 ? m2/1000 : sport === "swim" ? d1/1000 : d1;
+    if(!(km > 0)) continue;
+    const secs = cMove >= 0 && numOf(r[cMove]) > 0 ? numOf(r[cMove]) : numOf(r[cElapsed]);
+    const hrv = cHr >= 0 ? Math.round(numOf(r[cHr])) : NaN, name = cName >= 0 ? (r[cName] || "").trim() : "";
+    out.push({src: "strava:" + (cId >= 0 ? (r[cId] || "").trim() : date + km.toFixed(2)), date, sport, km:+km.toFixed(3),
+      min: secs > 0 ? +(secs/60).toFixed(2) : null, hr: hrv >= 40 && hrv <= 230 ? hrv : null,
+      type: sport === "swim" ? "pool" : guessType(name, km, hrv >= 40 ? hrv : null, hrm), notes: name.slice(0,200)});
+  }
+  return {acts: out, other};
+}
+function stravaPlan(){
+  if(!stravaPreview) return null;
+  const cutoff = stravaRange === "all" ? "0000" : iso(addDays(today0(), -Number(stravaRange)));
+  const add = [], update = [], same = [];
+  for(const a of stravaPreview.acts.filter(a => a.date >= cutoff && a.date <= iso(today0()))){
+    if(state.runs.some(r => r.src === a.src)){ same.push(a); continue; }
+    const m = state.runs.find(r => !r.src && r.sport === a.sport && r.date === a.date && Math.abs(r.km - a.km) <= Math.max(.3, a.km*.03));
+    if(m){ (m.min ? same : update).push(Object.assign({match:m}, a)); } else add.push(a);
+  }
+  return {add, update, same};
+}
+function stravaPanel(){
+  const pl = stravaPlan();
+  let body = "";
+  if(pl){
+    const rows = [...pl.update, ...pl.add].sort((a,b) => b.date.localeCompare(a.date));
+    body = `<p style="margin:12px 0 6px"><b>${pl.add.length}</b> new activit${pl.add.length===1?"y":"ies"} to add${pl.update.length ? `, <b>${pl.update.length}</b> to fill in times for runs you already logged` : ""}${pl.same.length ? `, ${pl.same.length} already in your log` : ""}${stravaPreview.other ? `. Skipped ${stravaPreview.other} other activit${stravaPreview.other===1?"y":"ies"} such as rides and walks` : ""}.</p>
+      ${rows.length ? `<div class="scroll" style="max-height:340px;overflow-y:auto"><table><thead><tr><th>Date</th><th>Activity</th><th class="r">Distance</th><th class="r">Time</th><th class="r">Pace</th><th class="r">HR</th></tr></thead><tbody>
+      ${rows.slice(0,150).map(a => `<tr><td class="num">${shortDate(parseD(a.date))}</td><td><span class="typechip${a.sport==="swim"?" swimchip":""}">${a.sport==="swim" ? "Swim" : "Run · " + TYPES[a.type]}</span>${a.match ? ' <span class="muted small">fills in your logged run</span>' : ""}${a.notes ? `<div class="muted small">${esc(a.notes)}</div>` : ""}</td>
+        <td class="r num">${a.sport==="swim" ? swimDist(a.km) : dist(a.km,2) + " " + unit()}</td><td class="r num">${a.min ? fmtHMS(a.min) : "–"}</td>
+        <td class="r num">${a.min ? (a.sport==="swim" ? swimPace(a.km, a.min) : fmtPace(a.min/a.km) + paceUnit()) : "–"}</td><td class="r num">${a.hr || "–"}</td></tr>`).join("")}
+      </tbody></table></div>${rows.length > 150 ? `<p class="muted small">Showing the latest 150.</p>` : ""}` : ""}
+      <p class="muted small" style="margin:8px 0">Run types are guessed from each activity’s name, distance and heart rate: “tempo”, “intervals” or “race” in the name, a hard heart rate over a race distance counts as a race, 18 km or more as a long run. You can fix any afterwards.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">${pl.add.length || pl.update.length ? `<button class="btn primary" data-act="stravaimport">Import ${pl.add.length + pl.update.length}</button>` : ""}<button class="btn" data-act="stravacancel">Cancel</button></div>`;
+  }
+  return `<div class="panel" style="margin-top:20px" id="strava-panel">
+    <h3>Import from Strava</h3>
+    ${stravaMsg ? `<p class="${stravaMsg.startsWith("!") ? "err" : "ok"} small" role="status">${esc(stravaMsg.replace(/^!/, ""))}</p>` : ""}
+    <p class="muted small" style="margin-bottom:10px">On strava.com, go to Settings → My Account → Download or Delete Your Account → Request your archive. Strava emails you a zip within a few hours. Unzip it and choose the <b>activities.csv</b> file inside. Importing again later only adds what’s new.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
+      <label class="f">activities.csv<input type="file" id="strava-file" accept=".csv,text/csv"></label>
+      <label class="f">Import<select id="strava-range"><option value="28" ${stravaRange==="28"?"selected":""}>Last 4 weeks</option><option value="84" ${stravaRange==="84"?"selected":""}>Last 12 weeks</option><option value="365" ${stravaRange==="365"?"selected":""}>Last year</option><option value="all" ${stravaRange==="all"?"selected":""}>Everything</option></select></label>
+    </div>
+    ${body}
+  </div>`;
+}
+
+function wkHtml(w, label, open, paces){
+  return `<details class="wk" ${open?"open":""}>
+    <summary><span class="num">${label}</span><span class="phase ${w.phase}">${w.phase}${w.cut?" · recovery":""}</span>
+      <span class="num">${distRound(w.total)} ${unit()}</span><span class="muted small lr">${w.long ? `long ${distRound(w.long)}` : esc((w.days.find(d => d.type === "race") || {title:"easy week"}).title)}</span></summary>
+    <div class="wk-days">${w.days.map(d => `<div class="row"><span class="muted">${DOW[d.dow]} ${d.date.getDate()}</span><span class="num">${d.km ? (d.type==="race" ? dist(d.km) : distRound(d.km)) : "—"}</span><span><b>${esc(d.title)}</b> <span class="muted">${esc(d.detail)}</span>${targetHtml(d, paces)}${d.km && shoeForSession(d) ? `<div class="tgt">Shoes: ${esc(shoeForSession(d).name)}</div>` : ""}</span></div>`).join("")}</div>
+  </details>`;
+}
+function renderPlan(){
+  const el = document.getElementById("view-plan");
+  const bi = blockInfo(), plan = bi.cur;
+  if(plan.past){
+    el.innerHTML = `<h2>Training plan</h2><div class="panel"><p>Your race on ${shortDate(plan.raceDate)} has passed. Set your next race date to build a new plan.</p><a class="btn primary" href="#settings">Set next race</a></div>`;
+    return;
+  }
+  const full = plan.full, total = plan.weeks.reduce((s,w)=>s+w.total,0);
+  const longest = Math.max(...plan.weeks.map(w=>w.long)), toRace = plan.nWeeks - bi.weekIdx;
+  const blockEnd = addDays(bi.start, 7*plan.weeks.length - 1);
+  const labelOf = i => i === bi.weekIdx ? "This week" : i < bi.weekIdx ? "Last week" : "Next week";
+  const raceInBlock = plan.weeks.some(w => w.phase === "Race");
+  let nextHtml = "";
+  if(bi.next){
+    nextHtml = `<h3 style="margin:28px 0 4px">Your next two weeks</h3>
+      <p class="muted small" style="margin-bottom:12px">Planned ${fmtDay(bi.next.genDate)} from your runs up to ${fmtDay(bi.next.cutoff)}: ${dist(bi.next.base)} ${unit()} a week on average, longest ${dist(bi.next.baseLong)} ${unit()}.</p>
+      ${bi.next.weeks.map(w => wkHtml(w, shortDate(w.monday), false, bi.next.paces)).join("")}`;
+  }else if(!raceInBlock){
+    nextHtml = `<div class="panel" style="margin-top:20px"><p style="margin:0">Your next two weeks will be planned on <b>${fmtDay(bi.nextGen)}</b>, three days before this block ends, using your runs up to ${fmtDay(addDays(bi.nextGen,-1))}.</p></div>`;
+  }
+  el.innerHTML = `<h2>${full?"Marathon":"Half marathon"} plan · ${shortDate(bi.start)}–${shortDate(blockEnd)}</h2>
+  <p class="lede">Planned ${fmtDay(plan.genDate)} from your runs up to ${fmtDay(plan.cutoff)} (${dist(plan.base)} ${unit()} a week on average, longest ${dist(plan.baseLong)} ${unit()}). It stays fixed for these two weeks so you can follow it. How you run them shapes the next two.</p>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="plan-summary">
+      <div><span class="muted small">Race day</span><span class="num">${shortDate(plan.raceDate)}</span></div>
+      <div><span class="muted small">Weeks to go</span><span class="num">${toRace}</span></div>
+      <div><span class="muted small">These two weeks</span><span class="num">${distRound(total)} ${unit()}</span></div>
+      <div><span class="muted small">Longest run</span><span class="num">${longest ? distRound(longest) + " " + unit() : "Race"}</span></div>
+    </div>
+    ${plan.assumed ? `<p class="note" style="margin-top:8px">No half or full marathon on your calendar, so this assumes one 16 weeks from when you started. <a href="#settings">Add a race</a>.</p>` : ""}
+    <p class="note" style="margin-top:8px">${plan.paceSrc === "fitness" ? `Paces come from your current fitness (VDOT ${plan.paces.vdot.toFixed(1)}).`
+      : plan.paceSrc === "recent" ? `Paces come from the runs you’ve logged so far (VDOT ${plan.paces.vdot.toFixed(1)}). They’ll settle once your first weekly prediction arrives on Monday.`
+      : plan.paceSrc === "goal" ? `Paces come from your goal time for ${esc(raceLabel(targetRace()))}, since there aren’t enough logged runs yet. Log a few runs and they’ll switch to your actual fitness.`
+      : `Log a few runs, or add a goal time to your main race in <a href="#settings">Settings</a>, and a target pace will appear for every run.`}</p>
+    ${forecastNote()}
+    ${hrMax() ? "" : `<p class="note">Add your age or max heart rate in <a href="#settings">Settings</a> to see heart rate targets.</p>`}
+    <p class="note" style="margin-top:10px">Ill, injured or plans changed? <button class="btn" data-act="rebuild" style="padding:5px 12px;margin-left:4px">Rebuild from latest runs</button></p>
+  </div>
+  ${plan.weeks.map((w,i) => wkHtml(w, labelOf(i), i === bi.weekIdx, plan.paces)).join("")}
+  ${nextHtml}
+  <p class="note">Each two-week block builds about 7% a week on your recent average, with a lighter recovery week every fourth week, then tapers ${full?"over three weeks":"over two weeks"} before race day. If something hurts, rest.</p>`;
+}
+
+let raceEdit = null, raceMsg = "", profMsg = "", raceDraft = null, shoeMsg = "", dataMsg = "";
+function racePrediction(r, pred){
+  if(!pred) return null;
+  if(r.dist === "half") return pred.scen.hm.abs;
+  if(r.dist === "full") return pred.scen.fm.abs;
+  return raceTime(pred.fit.vdot, DIST[r.dist].km);
+}
+function renderSettings(){
+  const el = document.getElementById("view-settings"), p = state.profile, t = iso(today0());
+  const pred = weeklyPred(), tr = targetRace();
+  const races = [...p.races].sort((a,b) => a.date.localeCompare(b.date));
+  const up = races.filter(r => r.date >= t), past = races.filter(r => r.date < t).reverse();
+  const row = r => {
+    const pt = r.date >= t ? racePrediction(r, pred) : null, isT = tr && tr.id === r.id;
+    return `<tr>
+      <td class="num">${shortDate(parseD(r.date))}<div class="muted small">${parseD(r.date).getFullYear()}</div></td>
+      <td><b>${esc(raceLabel(r))}</b>${isT ? ` <span class="typechip" style="background:var(--clock);color:#13203A">${r.main ? "Main race" : "Plan target"}</span>` : ""}<div class="muted small">${DIST[r.dist].label}${r.goal ? ` · goal ${esc(r.goal)}` : ""}</div></td>
+      <td class="r num">${pt ? fmtHMS(pt) : "–"}</td>
+      <td class="r" style="white-space:nowrap">
+        ${r.date >= t && (r.dist === "half" || r.dist === "full") && !isT ? `<button class="btn" style="padding:5px 10px" data-act="mainrace" data-id="${esc(r.id)}">Make main</button>` : ""}
+        <button class="btn" style="padding:5px 10px" data-act="editrace" data-id="${esc(r.id)}">Edit</button>
+        <button class="iconbtn" data-act="delrace" data-id="${esc(r.id)}" aria-label="Delete ${esc(raceLabel(r))}">✕</button></td></tr>`;
+  };
+  const ed = raceEdit && raceEdit !== "new" ? p.races.find(r => r.id === raceEdit) : null;
+  const f = ed || Object.assign({name:"", dist:"half", date:"", goal:"", main: !tr}, raceDraft || {});
+  const formHtml = raceEdit ? `<div class="panel" style="margin-top:16px;border-color:var(--track)">
+      <h3>${ed ? "Edit race" : "Add a race"}</h3>
+      <div class="form" id="raceform">
+        <label class="f">Distance<select id="r-dist">${Object.entries(DIST).map(([k,v]) => `<option value="${k}" ${f.dist===k?"selected":""}>${v.label}</option>`).join("")}</select></label>
+        <label class="f">Race date<input type="date" id="r-date" value="${esc(f.date)}"></label>
+        <label class="f full">Race name <small>Optional</small><input type="text" id="r-name" maxlength="60" value="${esc(f.name)}" placeholder="City Half Marathon"></label>
+        <label class="f">Goal time <small>Optional, e.g. 1:45:00</small><input type="text" id="r-goal" value="${esc(f.goal)}" placeholder="1:45:00"></label>
+        <label class="f" style="flex-direction:row;align-items:center;gap:8px;align-self:end;padding-bottom:10px"><input type="checkbox" id="r-main" ${f.main?"checked":""}> Main race <small>(half or full)</small></label>
+        <p class="full muted small" style="margin:0">Your plan builds toward your main race. Other races show up in your plan as tune-ups, with a shakeout before and recovery after.</p>
+        <p class="err full" id="r-err" role="alert"></p>
+        <div class="full" style="display:flex;gap:10px"><button class="btn primary" data-act="saverace">Save race</button><button class="btn" data-act="cancelrace">Cancel</button></div>
+      </div></div>` : "";
+  el.innerHTML = `<h2>Settings</h2><p class="lede">Your races shape the plan; your runs shape everything else.</p>
+  <div class="panel" style="max-width:760px">
+    <div class="week-head"><h3>Your races</h3>${raceEdit ? "" : `<button class="btn primary" data-act="newrace">Add a race</button>`}</div>
+    ${raceMsg ? `<p class="ok small" role="status">${raceMsg}</p>` : ""}
+    ${up.length ? `<div class="scroll"><table><thead><tr><th>Date</th><th>Race</th><th class="r">Predicted</th><th class="r"><span style="position:absolute;left:-9999px">Actions</span></th></tr></thead><tbody>${up.map(row).join("")}</tbody></table></div>`
+      : `<p class="muted">No upcoming races. Add one so your plan has something to build toward.</p>`}
+    ${past.length ? `<details style="margin-top:12px"><summary class="muted small" style="cursor:pointer">Past races (${past.length})</summary><div class="scroll"><table><tbody>${past.map(row).join("")}</tbody></table></div></details>` : ""}
+    ${formHtml}
+  </div>
+  <div class="panel" style="max-width:760px;margin-top:20px">
+    <div class="week-head"><h3>Your shoes</h3><button class="btn" data-act="addshoe">Add a pair</button></div>
+    ${shoeMsg ? `<p class="ok small" role="status">${shoeMsg}</p>` : ""}
+    <p class="muted small">Every run is counted automatically on the pair set for its type, including runs you logged before adding the shoes: intervals and tempo on speed shoes, easy runs on easy shoes, long runs on long-run shoes, races on race shoes. Change what a pair is used for and all runs of that type move with it. Only pick a pair when logging if you wore something different. Use the next column only for distance you ran before you started logging here.</p>
+    <div class="scroll"><table class="shoetable"><thead><tr><th>Shoe</th><th>Used for</th><th class="r">${unit()} not in your log</th><th class="r">Replace at</th><th></th></tr></thead><tbody>
+    ${activeShoes().map(sh => `<tr data-shoe="${esc(sh.id)}">
+      <td><input type="text" class="sh-name" maxlength="60" value="${esc(sh.name)}" aria-label="Shoe name"></td>
+      <td><select class="sh-role" aria-label="Used for">${Object.entries(SHOE_ROLES).map(([k,v]) => `<option value="${k}" ${sh.role===k?"selected":""}>${v.label}</option>`).join("")}</select></td>
+      <td class="r"><input type="number" class="sh-start" min="0" max="5000" inputmode="decimal" value="${Math.round(unit()==="mi" ? sh.startKm/MI : sh.startKm)}" aria-label="Distance not in your log" style="max-width:110px"></td>
+      <td class="r"><input type="number" class="sh-retire" min="50" max="3000" inputmode="decimal" value="${Math.round(unit()==="mi" ? sh.retireKm/MI : sh.retireKm)}" aria-label="Replace at" style="max-width:110px"></td>
+      <td class="r"><button class="iconbtn" data-act="retireshoe" data-id="${esc(sh.id)}" aria-label="Retire ${esc(sh.name)}" title="Retire this pair">✕</button></td></tr>`).join("")}
+    </tbody></table></div>
+    <p class="err" id="sh-err" role="alert"></p>
+    <button class="btn primary" data-act="saveshoes">Save shoes</button>
+  </div>
+  <div class="panel" style="max-width:760px;margin-top:20px">
+    <h3>You and your conditions</h3>
+    ${profMsg ? `<p class="ok small" role="status">${profMsg}</p>` : ""}
+    <div class="form" id="profform">
+      <label class="f">Age<input type="number" id="p-age" inputmode="numeric" min="10" max="100" value="${p.age ?? ""}" placeholder="32"></label>
+      <label class="f">Max heart rate <small>Optional, overrides the age estimate</small><input type="number" id="p-max" inputmode="numeric" min="120" max="230" value="${p.maxHr ?? ""}" placeholder="bpm"></label>
+      <label class="f">Resting heart rate <small>Optional, sharpens your zones</small><input type="number" id="p-rest" inputmode="numeric" min="30" max="100" value="${p.restHr ?? ""}" placeholder="bpm"></label>
+      <label class="f">Location <small>For the weather forecast</small><input type="text" id="p-loc" maxlength="80" value="${esc(p.location)}"></label>
+      <fieldset class="f" style="border:none;padding:0;margin:0"><legend style="font-weight:500;font-size:.92rem;margin-bottom:6px">Runs per week</legend>
+        <select id="p-days" aria-label="Runs per week"><option value="" ${!p.runDays ? "selected" : ""}>Let the plan decide (4–6)</option>${[3,4,5,6,7].map(n => `<option value="${n}" ${p.runDays === n ? "selected" : ""}>${n} runs</option>`).join("")}</select></fieldset>
+      <fieldset class="f" style="border:none;padding:0;margin:0"><legend style="font-weight:500;font-size:.92rem;margin-bottom:6px">Usual run time</legend>
+        <label style="margin-right:16px"><input type="radio" name="p-time" value="morning" ${p.runTime==="morning"?"checked":""}> Early morning</label>
+        <label><input type="radio" name="p-time" value="evening" ${p.runTime==="evening"?"checked":""}> Evening</label></fieldset>
+      <fieldset class="f" style="border:none;padding:0;margin:0"><legend style="font-weight:500;font-size:.92rem;margin-bottom:6px">Units</legend>
+        <label style="margin-right:16px"><input type="radio" name="p-units" value="km" ${p.units==="km"?"checked":""}> Kilometres</label>
+        <label><input type="radio" name="p-units" value="mi" ${p.units==="mi"?"checked":""}> Miles</label></fieldset>
+      <p class="full muted small" style="margin:0">${hrMax() ? `Heart rate targets use a max of ${hrMax().v} bpm${hrMax().est ? " estimated from your age (208 − 0.7 × age). If you know your real max from a hard race, enter it" : ""}${state.profile.restHr ? `, with your resting ${state.profile.restHr} bpm` : ""}.` : "Add your age or max heart rate to get heart rate targets for every planned run."}</p>
+      <p class="err full" id="p-err" role="alert"></p>
+      <div class="full"><button class="btn primary" data-act="saveprof">Save</button></div>
+    </div>
+  </div>
+  <div class="panel" style="max-width:760px;margin-top:20px">
+    <h3>Data</h3>
+    <p class="muted">${runsOnly().length} run${runsOnly().length===1?"":"s"} and ${swimsOnly().length} swim${swimsOnly().length===1?"":"s"} logged.</p>
+    <p class="muted small">Everything is stored only on this device. Export a backup now and then, and use Import to move your data to another phone or browser.</p>
+    ${dataMsg ? `<p class="${dataMsg.startsWith("!") ? "err" : "ok"} small" role="status">${esc(dataMsg.replace(/^!/, ""))}</p>` : ""}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn primary" data-act="export">Export backup</button>
+      <label class="btn" style="cursor:pointer">Import backup<input type="file" id="imp-file" accept=".json,application/json" style="position:absolute;left:-9999px"></label>
+      <button class="btn" data-act="sample">Replace with sample runs</button><button class="btn danger" data-act="clear">Delete everything logged</button></div>
+  </div>`;
+  if(raceEdit) renderSuggestions();
+  raceMsg = ""; profMsg = ""; shoeMsg = "";
+}
+function renderSuggestions(){}
+
+/* ---------- routing & events ---------- */
+const VIEWS = ["overview","log","plan","settings"];
+function current(){ const h = location.hash.replace("#",""); return VIEWS.includes(h) ? h : "overview"; }
+function render(){
+  syncTarget();
+  const v = current();
+  VIEWS.forEach(n => document.getElementById("view-"+n).classList.toggle("active", n === v));
+  document.querySelectorAll("nav.tabs a").forEach(a => { if(a.dataset.view === v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  ({overview:renderOverview, log:renderLog, plan:renderPlan, settings:renderSettings})[v]();
+}
+window.addEventListener("hashchange", () => { dataMsg = ""; render(); window.scrollTo(0,0); });
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act],[data-del],[data-set]");
+  if(!b) return;
+  if(b.dataset.del){
+    state.runs = state.runs.filter(r => r.id !== b.dataset.del); persist(); render(); return;
+  }
+  if(b.dataset.set){
+    state.profile[b.dataset.set] = b.dataset.val; persist(); render(); return;
+  }
+  const act = b.dataset.act;
+  if(act === "sample"){
+    if(state.runs.length && !confirm("Replace everything you’ve logged with sample activities?")) return;
+    state.runs = sampleRuns(); persist(); location.hash = "#overview"; render();
+  }else if(act === "clear"){
+    if(!confirm("Delete all logged runs and swims? This can’t be undone.")) return;
+    state.runs = []; persist(); render();
+  }else if(act === "sday"){
+    document.querySelectorAll(".sday").forEach(x => x.classList.toggle("sel", x === b));
+    const out = document.getElementById("sday-detail"); if(out){ out.textContent = b.dataset.detail; out.classList.remove("muted"); }
+  }else if(act === "quicklog"){
+    const box = document.getElementById("quicklog"), err = document.getElementById("ql-err"); if(!box) return;
+    const dIn = parseFloat(document.getElementById("ql-dist").value), tStr = document.getElementById("ql-time").value.trim();
+    const hrRaw = document.getElementById("ql-hr").value.trim(), hr = hrRaw === "" ? null : Math.round(Number(hrRaw));
+    const min = tStr ? parseDuration(tStr) : null;
+    if(!(dIn > 0) || dIn > 200){ err.textContent = "Enter the distance you ran."; return; }
+    if(tStr && !(min > 0 && min < 24*60)){ err.textContent = "Enter the time as mm:ss or h:mm:ss, like 52:30, or leave it blank."; return; }
+    if(hr !== null && !(hr >= 40 && hr <= 230)){ err.textContent = "Average heart rate should be between 40 and 230."; return; }
+    const km = unit()==="mi" ? dIn*MI : dIn;
+    if(min && (min/km < 2.3 || min/km > 20)){ err.textContent = `That’s ${fmtPace(min/km)}${paceUnit()} — check the distance and time.`; return; }
+    state.runs.push({id:uid(), sport:"run", date:box.dataset.date, km:+km.toFixed(3), min: min ? +min.toFixed(3) : null, type:box.dataset.type, notes:"", hr, shoe:""});
+    quickMsg = `Logged ${dist(km)} ${unit()}${min ? ` at ${fmtPace(min/km)}${paceUnit()}` : ""}. Nice work.`;
+    persist(); render();
+  }else if(act === "export"){
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], {type:"application/json"}));
+    a.download = `finish-line-backup-${iso(today0())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    dataMsg = "Backup saved to your downloads."; render();
+  }else if(act === "prednow"){
+    state.profile.predRef = iso(today0()); persist(); render();
+  }else if(act === "stravacancel"){ stravaPreview = null; stravaMsg = ""; render();
+  }else if(act === "stravaimport"){
+    const pl = stravaPlan(); if(!pl) return;
+    pl.update.forEach(a => Object.assign(a.match, {min:a.min, hr: a.match.hr || a.hr, src:a.src, notes: a.match.notes && !/past-week list/.test(a.match.notes) ? a.match.notes : a.notes, type: a.match.type === "easy" ? a.type : a.match.type}));
+    pl.add.forEach(a => state.runs.push({id:uid(), sport:a.sport, date:a.date, km:a.km, min:a.min, type:a.type, notes:a.notes, hr:a.hr, shoe:"", src:a.src}));
+    stravaMsg = `Imported ${pl.add.length} activit${pl.add.length===1?"y":"ies"}${pl.update.length ? ` and filled in ${pl.update.length} run${pl.update.length===1?"":"s"}` : ""} from Strava. Your plan, predictions and shoe distances now include them.`;
+    stravaPreview = null; persist(); render();
+  }else if(act === "usesugg"){
+    const n = document.getElementById("r-name"); if(n) n.value = b.dataset.name;
+    document.querySelectorAll(".sugg").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  }else if(act === "suggadd"){
+    raceEdit = "new"; raceDraft = {name: b.dataset.name, dist: DIST[b.dataset.dist] ? b.dataset.dist : "half", main:false};
+    raceMsg = "Pick the date from the official site, then save.";
+    if(location.hash === "#settings") render(); else location.hash = "#settings";
+    setTimeout(() => document.getElementById("r-date")?.focus(), 60);
+  }else if(act === "newrace"){ raceDraft = null; raceEdit = "new"; render(); document.getElementById("r-dist")?.focus();
+  }else if(act === "editrace"){ raceEdit = b.dataset.id; render(); document.getElementById("r-name")?.focus();
+  }else if(act === "cancelrace"){ raceEdit = null; render();
+  }else if(act === "delrace"){
+    const r = state.profile.races.find(x => x.id === b.dataset.id); if(!r) return;
+    if(!confirm(`Delete ${raceLabel(r)}?`)) return;
+    state.profile.races = state.profile.races.filter(x => x.id !== r.id);
+    if(raceEdit === r.id) raceEdit = null;
+    raceMsg = `Deleted ${esc(raceLabel(r))}.`; persist(); render();
+  }else if(act === "mainrace"){
+    state.profile.races.forEach(x => x.main = x.id === b.dataset.id);
+    const r = state.profile.races.find(x => x.id === b.dataset.id);
+    raceMsg = `${esc(raceLabel(r))} is now your main race. Your plan has been rebuilt around it.`; persist(); render();
+  }else if(act === "saverace"){
+    const err = document.getElementById("r-err");
+    const name = document.getElementById("r-name").value.trim(), dist = document.getElementById("r-dist").value;
+    const date = document.getElementById("r-date").value, goal = document.getElementById("r-goal").value.trim();
+    const main = document.getElementById("r-main").checked;
+    if(!date){ err.textContent = "Pick the race date."; return; }
+    if(raceEdit === "new" && date < iso(today0())){ err.textContent = "Pick a date from today onward."; return; }
+    if(goal && !(parseDuration(goal) > 10)){ err.textContent = "Enter the goal as h:mm:ss or mm:ss, like 1:45:00."; return; }
+    if(main && dist !== "half" && dist !== "full"){ err.textContent = "Only a half or full marathon can be your main race. Uncheck Main race to add it as a tune-up."; return; }
+    const before = targetRace()?.id;
+    let r = raceEdit !== "new" ? state.profile.races.find(x => x.id === raceEdit) : null;
+    if(!r){ r = {id:uid()}; state.profile.races.push(r); }
+    Object.assign(r, {name, dist, date, goal, main});
+    if(main) state.profile.races.forEach(x => { if(x.id !== r.id) x.main = false; });
+    syncTarget();
+    const nowT = targetRace();
+    raceMsg = `Saved ${esc(raceLabel(r))}.` + (nowT && nowT.id === r.id ? (before === r.id ? "" : " Your plan has been rebuilt to build toward it.") : r.date >= iso(today0()) ? " It’ll show in your plan as a tune-up." : "");
+    raceEdit = null; persist(); render();
+  }else if(act === "saveshoes" || act === "addshoe"){
+    const err = document.getElementById("sh-err"), f = unit()==="mi" ? MI : 1, next = [];
+    for(const tr of document.querySelectorAll("tr[data-shoe]")){
+      const sh = shoeById(tr.dataset.shoe); if(!sh) continue;
+      const name = tr.querySelector(".sh-name").value.trim(), start = Number(tr.querySelector(".sh-start").value || 0), ret = Number(tr.querySelector(".sh-retire").value);
+      if(!name){ err.textContent = "Every pair needs a name."; return; }
+      if(!(start >= 0 && start <= 5000)){ err.textContent = `Check the distance before tracking for ${name}.`; return; }
+      if(!(ret >= 50 && ret <= 3000)){ err.textContent = `Set a replace-at distance between 50 and 3000 for ${name}.`; return; }
+      next.push([sh, {name, role: tr.querySelector(".sh-role").value, startKm: start*f, retireKm: ret*f}]);
+    }
+    next.forEach(([sh, v]) => Object.assign(sh, v));
+    if(act === "addshoe"){ state.shoes.push({id:uid(), name:"New shoes", role:"easy", startKm:0, retireKm:SHOE_ROLES.easy.life, since:iso(today0()), retired:false}); shoeMsg = "Added a pair. Name it, then save."; }
+    else shoeMsg = "Shoes saved.";
+    persist(); render();
+  }else if(act === "retireshoe"){
+    const sh = shoeById(b.dataset.id); if(!sh || !confirm(`Retire ${sh.name}? Its runs stay in your log.`)) return;
+    sh.retired = true; shoeMsg = `Retired ${esc(sh.name)}.`; persist(); render();
+  }else if(act === "saveprof"){
+    const err = document.getElementById("p-err"), val = id => document.getElementById(id).value.trim();
+    const num = (id, a, b, label) => { const v = val(id); if(v === "") return null; const n = Number(v); if(!isFinite(n) || n < a || n > b){ throw `${label} should be between ${a} and ${b}.`; } return Math.round(n); };
+    try{
+      const age = num("p-age", 10, 100, "Age"), maxHr = num("p-max", 120, 230, "Max heart rate"), restHr = num("p-rest", 30, 100, "Resting heart rate");
+      const loc = val("p-loc");
+      if(!loc){ err.textContent = "Enter a location for the weather forecast."; return; }
+      Object.assign(state.profile, {age, maxHr, restHr, location:loc.slice(0,80),
+        runDays: Number(document.getElementById("p-days").value) || null,
+        runTime: (document.querySelector('input[name="p-time"]:checked') || {}).value === "evening" ? "evening" : "morning",
+        units: (document.querySelector('input[name="p-units"]:checked') || {}).value === "mi" ? "mi" : "km"});
+      profMsg = "Saved."; persist(); render(); refreshWeather(true);
+    }catch(m){ err.textContent = String(m); }
+  }else if(act === "rebuild"){
+    if(!confirm("Replace the current two weeks with a new plan from your latest runs?")) return;
+    state.schedule = null; render();
+  }else if(act === "sport"){
+    logSport = b.dataset.val === "swim" ? "swim" : "run"; render();
+  }else if(act === "addrun" && logSport === "swim"){
+    const date = document.getElementById("f-date").value;
+    const dIn = parseFloat(document.getElementById("f-dist").value);
+    const min = parseDuration(document.getElementById("f-time").value);
+    const type = document.getElementById("f-type").value;
+    const notes = document.getElementById("f-notes").value.trim();
+    const hrRaw = document.getElementById("f-hr").value.trim();
+    const hr = hrRaw === "" ? null : Math.round(parseFloat(hrRaw));
+    const err = document.getElementById("f-err"), su = unit()==="mi" ? "yd" : "m";
+    if(!date || parseD(date) > today0()){ err.textContent = "Pick a date up to today."; return; }
+    if(!(dIn >= 25) || dIn > 25000){ err.textContent = `Enter the distance in ${su === "m" ? "metres" : "yards"}, like 1500.`; return; }
+    if(!(min > 0) || min > 12*60){ err.textContent = "Enter the time as mm:ss or h:mm:ss, like 32:00."; return; }
+    if(hr !== null && !(hr >= 40 && hr <= 230)){ err.textContent = "Enter average heart rate in beats per minute, between 40 and 230."; return; }
+    const km = su === "yd" ? dIn*YD : dIn/1000, per100 = min/(km*10);
+    if(per100 < .8 || per100 > 8){ err.textContent = `That’s ${swimPace(km, min)} — check the distance and time.`; return; }
+    state.runs.push({id:uid(), sport:"swim", date, km:+km.toFixed(4), min:+min.toFixed(3), type, notes, hr});
+    persist();
+    logMsg = `<span class="ok">Added a ${swimDist(km)} swim at ${swimPace(km, min)}.</span>`;
+    render();
+  }else if(act === "addrun"){
+    const date = document.getElementById("f-date").value;
+    const dIn = parseFloat(document.getElementById("f-dist").value);
+    const min = parseDuration(document.getElementById("f-time").value);
+    const type = document.getElementById("f-type").value;
+    const notes = document.getElementById("f-notes").value.trim();
+    const hrRaw = document.getElementById("f-hr").value.trim();
+    const hr = hrRaw === "" ? null : Math.round(parseFloat(hrRaw));
+    const err = document.getElementById("f-err");
+    if(!date || parseD(date) > today0()){ err.textContent = "Pick a date up to today."; return; }
+    if(!(dIn > 0) || dIn > 200){ err.textContent = "Enter the distance as a number, like 10 or 6.2."; return; }
+    const noTime = !document.getElementById("f-time").value.trim();
+    if(!noTime && (!(min > 0) || min > 24*60)){ err.textContent = "Enter the time as mm:ss or h:mm:ss, like 52:30, or leave it blank."; return; }
+    if(hr !== null && !(hr >= 40 && hr <= 230)){ err.textContent = "Enter average heart rate in beats per minute, between 40 and 230."; return; }
+    const km = unit()==="mi" ? dIn*MI : dIn, pace = noTime ? null : min/km;
+    if(!noTime && (pace < 2.3 || pace > 20)){ err.textContent = `That’s ${fmtPace(pace)}${paceUnit()} — check the distance and time.`; return; }
+    const sel = document.getElementById("f-shoe"), auto = defaultShoeFor(type);
+    const shoe = sel && sel.value !== (auto ? auto.id : "none") ? sel.value : ""; // blank = follows the run type automatically
+    state.runs.push({id:uid(), sport:"run", date, km:+km.toFixed(3), min: noTime ? null : +min.toFixed(3), type, notes, hr, shoe});
+    persist();
+    logMsg = `<span class="ok">Added ${dist(km)} ${unit()}${noTime ? ". With no time, it counts toward your distance and shoes but not your predictions." : ` at ${fmtPace(pace)}${paceUnit()}.`}</span>`;
+    render();
+  }
+});
+document.addEventListener("change", e => {
+  if(e.target.id === "r-dist" || e.target.id === "r-date") renderSuggestions();
+  if(e.target.id === "imp-file" && e.target.files && e.target.files[0]){
+    e.target.files[0].text().then(text => {
+      let data; try{ data = JSON.parse(text); }catch(err){ dataMsg = "!That file isn’t a Finish Line backup."; render(); return; }
+      if(!data || !data.profile || !Array.isArray(data.runs)){ dataMsg = "!That file isn’t a Finish Line backup."; render(); return; }
+      if(state.runs.length && !confirm(`Replace what’s on this device with the backup (${data.runs.length} activities)?`)) return;
+      state = normalize(data); persist(); dataMsg = `Imported ${state.runs.length} activities, your races, shoes and settings.`; render(); refreshWeather(true);
+    }).catch(() => { dataMsg = "!Couldn’t read that file."; render(); });
+  }
+  if(e.target.id === "strava-range"){ stravaRange = e.target.value; render(); }
+  if(e.target.id === "strava-file" && e.target.files && e.target.files[0]){
+    const file = e.target.files[0];
+    if(file.size > 30*1024*1024){ stravaMsg = "!That file is too large. Choose activities.csv from the archive."; render(); return; }
+    file.text().then(text => {
+      try{ stravaPreview = readStrava(text); stravaMsg = stravaPreview.acts.length ? "" : "!No runs or swims found in that file."; if(!stravaPreview.acts.length) stravaPreview = null; }
+      catch(m){ stravaPreview = null; stravaMsg = "!" + String(m); }
+      render(); document.getElementById("strava-panel")?.scrollIntoView({block:"start"});
+    }).catch(() => { stravaMsg = "!Couldn’t read that file."; render(); });
+  }
+  if(e.target.id === "f-type"){ const sel = document.getElementById("f-shoe"), sh = defaultShoeFor(e.target.value); if(sel) sel.value = sh ? sh.id : "none"; }
+});
+document.addEventListener("keydown", e => {
+  if(e.key === "Enter" && e.target.closest && e.target.closest("#quicklog") && e.target.tagName === "INPUT"){ e.preventDefault(); document.querySelector('[data-act="quicklog"]').click(); return; }
+  if(e.key === "Enter" && e.target.closest && e.target.closest("#profform") && e.target.tagName === "INPUT"){ e.preventDefault(); document.querySelector('[data-act="saveprof"]').click(); return; }
+  if(e.key === "Enter" && e.target.closest && e.target.closest("#raceform") && e.target.tagName === "INPUT"){ e.preventDefault(); document.querySelector('[data-act="saverace"]').click(); return; }
+  if(e.key === "Enter" && e.target.closest && e.target.closest("#runform") && e.target.tagName === "INPUT"){
+    e.preventDefault(); document.querySelector('[data-act="addrun"]').click();
+  }
+});
+
+render();
+
+/* ---------- weather (Open-Meteo, free, no key) ---------- */
+refreshWeather(false);
+setInterval(() => refreshWeather(false), 3*3600e3);
+if("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+</script>
+</body>
+</html>
