@@ -81,11 +81,12 @@ p{margin:0 0 12px}
 .clock-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
 .clock-head p{margin:0;color:var(--hero-muted)}
 .clocks{display:grid;grid-template-columns:1fr;gap:6px}
-@media (min-width:700px){.clocks{grid-template-columns:1fr 1fr;gap:24px}}
+@media (min-width:700px){.clocks{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}}
 .clock-cell{padding:8px 0 4px;border-top:1px solid rgba(255,255,255,.12)}
 .clock-cell .label{display:flex;align-items:center;gap:8px;color:var(--hero-muted);font-weight:500}
 .goalflag{font-size:.75rem;background:var(--clock);color:#13203A;padding:1px 8px;border-radius:999px;font-weight:600}
-.clock{font-size:clamp(3.2rem,11vw,5.6rem);font-weight:600;line-height:1;color:var(--clock);font-variant-numeric:tabular-nums;letter-spacing:.01em;margin:4px 0}
+.clock{font-size:clamp(3rem,9vw,4.4rem);font-weight:600;line-height:1;color:var(--clock);font-variant-numeric:tabular-nums;letter-spacing:.01em;margin:4px 0}
+@media (min-width:700px) and (max-width:900px){.clock{font-size:clamp(2.4rem,5.4vw,3.2rem)}.scen b{font-size:1.25rem}}
 .clock.dim{color:var(--hero-muted)}
 .clock-sub{color:var(--hero-muted);font-size:.95rem}
 .clock-sub b{color:var(--hero-ink);font-weight:600}
@@ -492,7 +493,8 @@ function predict(runs, ref){
   return {fit, vol, hmRaw, fmRaw, hm, fm,
     scen:{
       hm:{amb: raceTime(fit.vdot+spread, 21.0975)*(1+hmPen*.5), abs: hm, worst: raceTime(fit.vdot-spread, 21.0975)*(1+hmPen*1.5+.01)},
-      fm:{amb: raceTime(fit.vdot+spread, 42.195)*(1+fmPen*.5), abs: fm, worst: raceTime(fit.vdot-spread, 42.195)*(1+fmPen*1.5+.03)}
+      fm:{amb: raceTime(fit.vdot+spread, 42.195)*(1+fmPen*.5), abs: fm, worst: raceTime(fit.vdot-spread, 42.195)*(1+fmPen*1.5+.03)},
+      tk:{amb: raceTime(fit.vdot+spread, 10), abs: raceTime(fit.vdot, 10), worst: raceTime(fit.vdot-spread, 10)*1.01}
     },
     pen:{hmVol, hmLong, fmVol, fmLong}};
 }
@@ -838,6 +840,7 @@ function renderOverview(){
     hero = `<div class="clockboard">
       <div class="clock-head"><h2>Finish prediction</h2><p>Updates with every run you log</p></div>
       <div class="clocks">
+        <div class="clock-cell"><div class="label">10K</div><div class="clock dim num">––:––</div></div>
         <div class="clock-cell"><div class="label">Half marathon ${!full?'<span class="goalflag">Your race</span>':""}</div><div class="clock dim num">–:––:––</div></div>
         <div class="clock-cell"><div class="label">Marathon ${full?'<span class="goalflag">Your race</span>':""}</div><div class="clock dim num">–:––:––</div></div>
       </div>
@@ -863,7 +866,7 @@ function renderOverview(){
     };
     hero = `<div class="clockboard">
       <div class="clock-head"><h2>Finish prediction</h2><p>${confDots(pred.fit.conf)} · runs through ${fmtDay(predRefDate())}${predRefDate() < t ? ` · <button class="linkbtn" data-act="prednow">Update now</button>` : " (up to date)"} · next update ${fmtDay(addDays(mondayOf(t),7))}</p></div>
-      <div class="clocks">${cell("Half marathon", pred.scen.hm, 21.0975, !full)}${cell("Marathon", pred.scen.fm, 42.195, full)}</div>
+      <div class="clocks">${cell("10K", pred.scen.tk, 10, false)}${cell("Half marathon", pred.scen.hm, 21.0975, !full)}${cell("Marathon", pred.scen.fm, 42.195, full)}</div>
       <p class="clock-sub small" style="margin:14px 0 0;max-width:72ch">Updated every Monday from your runs up to the Sunday before, or straight away when you tap Update now. Ambitious is a great day: you race at the top of what your recent runs show and your training gaps barely bite. Worst case is a tough day: fitness at the low end, gaps biting harder, plus some heat or pacing trouble. The range narrows as confidence rises.</p>
     </div>`;
   }
