@@ -1203,7 +1203,7 @@ function renderLog(){
       <td class="r num">${r.hr ? r.hr : "–"}</td>
       <td class="r"><button class="iconbtn" data-del="${esc(r.id)}" aria-label="Delete ${sw?"swim":"run"} on ${shortDate(parseD(r.date))}">✕</button></td></tr>`; }).join("");
   const swim = logSport === "swim", su = unit()==="mi" ? "yd" : "m";
-  el.innerHTML = `<h2>Log an activity</h2><p class="lede">Runs update your predictions and reshape the weeks ahead. Swims are tracked as cross-training.</p>
+  el.innerHTML = `<div class="week-head"><h2>Log an activity</h2><a class="btn" href="#strava-panel" data-act="gostrava">Import from Strava</a></div><p class="lede">Runs update your predictions and reshape the weeks ahead. Swims are tracked as cross-training.</p>
   <div class="grid2" style="align-items:start">
     <div class="panel">
       <div class="form" id="runform">
@@ -1235,6 +1235,30 @@ function renderLog(){
 }
 
 /* ---------- Strava import (activities.csv from Strava's data export) ---------- */
+function loadJSZip(){
+  if(window.JSZip) return Promise.resolve(window.JSZip);
+  return new Promise((ok, fail) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    sc.onload = () => window.JSZip ? ok(window.JSZip) : fail(); sc.onerror = fail; setTimeout(fail, 20000); document.head.appendChild(sc); });
+}
+async function importStravaFile(file){
+  stravaMsg = "Reading " + file.name + "…"; stravaPreview = null; render();
+  try{
+    let text;
+    if(/\.zip$/i.test(file.name) || /zip/.test(file.type)){
+      const JSZip = await loadJSZip().catch(() => { throw "Couldn’t open the zip here. Unzip it on your phone first and choose activities.csv."; });
+      const zip = await JSZip.loadAsync(file.arrayBuffer ? await file.arrayBuffer() : file);
+      const entry = Object.values(zip.files).find(f => !f.dir && /(^|\/)activities\.csv$/i.test(f.name));
+      if(!entry) throw "No activities.csv inside that zip. Make sure it’s the archive Strava emailed you.";
+      text = await entry.async("string");
+    }else{
+      if(file.size > 50*1024*1024) throw "That file is too large for activities.csv. Choose activities.csv from the archive.";
+      text = await file.text();
+    }
+    stravaPreview = readStrava(text);
+    if(!stravaPreview.acts.length){ stravaPreview = null; stravaMsg = "!No runs or swims found in that file."; } else stravaMsg = "";
+  }catch(m){ stravaPreview = null; stravaMsg = "!" + (typeof m === "string" ? m : "Couldn’t read that file. Try choosing activities.csv directly."); }
+  render(); document.getElementById("strava-panel")?.scrollIntoView({block:"start"});
+}
 let stravaPreview = null, stravaMsg = "", stravaRange = "84";
 function parseCSV(text){
   const rows = []; let row = [], f = "", q = false;
@@ -1328,7 +1352,7 @@ function stravaPanel(){
     ${stravaMsg ? `<p class="${stravaMsg.startsWith("!") ? "err" : "ok"} small" role="status">${esc(stravaMsg.replace(/^!/, ""))}</p>` : ""}
     <p class="muted small" style="margin-bottom:10px">On strava.com, go to Settings → My Account → Download or Delete Your Account → Request your archive. Strava emails you a zip within a few hours. Unzip it and choose the <b>activities.csv</b> file inside. Importing again later only adds what’s new.</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
-      <label class="f">activities.csv<input type="file" id="strava-file" accept=".csv,text/csv"></label>
+      <label class="f">Strava file <small>activities.csv, or the whole archive .zip</small><input type="file" id="strava-file" accept=".csv,.zip,text/csv,text/comma-separated-values,application/vnd.ms-excel,text/plain,application/zip,application/x-zip-compressed"></label>
       <label class="f">Import<select id="strava-range"><option value="28" ${stravaRange==="28"?"selected":""}>Last 4 weeks</option><option value="84" ${stravaRange==="84"?"selected":""}>Last 12 weeks</option><option value="365" ${stravaRange==="365"?"selected":""}>Last year</option><option value="all" ${stravaRange==="all"?"selected":""}>Everything</option></select></label>
     </div>
     ${body}
@@ -1534,6 +1558,7 @@ document.addEventListener("click", e => {
     dataMsg = "Backup saved to your downloads."; render();
   }else if(act === "prednow"){
     state.profile.predRef = iso(today0()); persist(); render();
+  }else if(act === "gostrava"){ e.preventDefault(); document.getElementById("strava-panel")?.scrollIntoView({behavior:"smooth", block:"start"});
   }else if(act === "stravacancel"){ stravaPreview = null; stravaMsg = ""; render();
   }else if(act === "stravaimport"){
     const pl = stravaPlan(); if(!pl) return;
@@ -1669,15 +1694,7 @@ document.addEventListener("change", e => {
     }).catch(() => { dataMsg = "!Couldn’t read that file."; render(); });
   }
   if(e.target.id === "strava-range"){ stravaRange = e.target.value; render(); }
-  if(e.target.id === "strava-file" && e.target.files && e.target.files[0]){
-    const file = e.target.files[0];
-    if(file.size > 30*1024*1024){ stravaMsg = "!That file is too large. Choose activities.csv from the archive."; render(); return; }
-    file.text().then(text => {
-      try{ stravaPreview = readStrava(text); stravaMsg = stravaPreview.acts.length ? "" : "!No runs or swims found in that file."; if(!stravaPreview.acts.length) stravaPreview = null; }
-      catch(m){ stravaPreview = null; stravaMsg = "!" + String(m); }
-      render(); document.getElementById("strava-panel")?.scrollIntoView({block:"start"});
-    }).catch(() => { stravaMsg = "!Couldn’t read that file."; render(); });
-  }
+  if(e.target.id === "strava-file" && e.target.files && e.target.files[0]) importStravaFile(e.target.files[0]);
   if(e.target.id === "f-type"){ const sel = document.getElementById("f-shoe"), sh = defaultShoeFor(e.target.value); if(sel) sel.value = sh ? sh.id : "none"; }
 });
 document.addEventListener("keydown", e => {
