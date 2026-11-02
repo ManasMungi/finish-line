@@ -1203,7 +1203,7 @@ function renderLog(){
       <td class="r num">${r.hr ? r.hr : "–"}</td>
       <td class="r"><button class="iconbtn" data-del="${esc(r.id)}" aria-label="Delete ${sw?"swim":"run"} on ${shortDate(parseD(r.date))}">✕</button></td></tr>`; }).join("");
   const swim = logSport === "swim", su = unit()==="mi" ? "yd" : "m";
-  el.innerHTML = `<div class="week-head"><h2>Log an activity</h2><a class="btn" href="#strava-panel" data-act="gostrava">Import from Strava</a></div><p class="lede">Runs update your predictions and reshape the weeks ahead. Swims are tracked as cross-training.</p>
+  el.innerHTML = `<div class="week-head"><h2>Log an activity</h2><a class="btn primary" href="#strava-panel" data-act="gostrava">Import CSV</a></div><p class="lede">Runs update your predictions and reshape the weeks ahead. Swims are tracked as cross-training.</p>
   <div class="grid2" style="align-items:start">
     <div class="panel">
       <div class="form" id="runform">
@@ -1558,7 +1558,7 @@ document.addEventListener("click", e => {
     dataMsg = "Backup saved to your downloads."; render();
   }else if(act === "prednow"){
     state.profile.predRef = iso(today0()); persist(); render();
-  }else if(act === "gostrava"){ e.preventDefault(); document.getElementById("strava-panel")?.scrollIntoView({behavior:"smooth", block:"start"});
+  }else if(act === "gostrava"){ e.preventDefault(); document.getElementById("strava-file")?.click(); // opens the file picker straight away
   }else if(act === "stravacancel"){ stravaPreview = null; stravaMsg = ""; render();
   }else if(act === "stravaimport"){
     const pl = stravaPlan(); if(!pl) return;
