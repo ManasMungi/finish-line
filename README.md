@@ -22,13 +22,6 @@ It costs nothing, needs no account or subscription, and works offline. Your data
 
 ## 1. Install the app
 
-### Put it online (one time, free)
-
-1. Create a free account at **github.com**, then make a new **public** repository, for example `finish-line`.
-2. Click **Add file → Upload files** and upload everything from `finish-line-app.zip`: `index.html`, `manifest.webmanifest`, `sw.js`, `icon.svg`, `icon-192.png` and `icon-512.png`.
-3. Go to **Settings → Pages**, choose **Deploy from a branch**, select `main`, and click **Save**.
-4. After a minute or two, your app is live at `https://<your-username>.github.io/finish-line/`.
-
 ### Add it to your phone
 
 - **Android (Chrome):** open the link, tap **⋮ → Add to Home screen** or **Install app**.
